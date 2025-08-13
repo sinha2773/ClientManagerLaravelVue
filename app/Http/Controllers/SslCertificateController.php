@@ -23,9 +23,12 @@ class SslCertificateController extends Controller
                     ],
                     'provider' => $certificate->provider,
                     'type' => $certificate->type,
+                    'issue_date' => $certificate->issue_date->format('Y-m-d'),
                     'expiry_date' => $certificate->expiry_date->format('Y-m-d'),
                     'status' => $certificate->status,
                     'price' => $certificate->price,
+                    'payment_status' => $certificate->payment_status,
+                    'auto_renew' => $certificate->auto_renew,
                 ];
             });
 
@@ -47,10 +50,17 @@ class SslCertificateController extends Controller
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'required|string|max:255',
             'type' => 'required|string|max:255',
+            'issue_date' => 'required|date',
             'expiry_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
+            'payment_status' => 'required|in:paid,unpaid,partially_paid',
+            'auto_renew' => 'boolean',
         ]);
+
+        // Get the client_id from the selected domain
+        $domain = Domain::findOrFail($validated['domain_id']);
+        $validated['client_id'] = $domain->client_id;
 
         SslCertificate::create($validated);
 
@@ -66,9 +76,12 @@ class SslCertificateController extends Controller
                 'domain_id' => $sslCertificate->domain_id,
                 'provider' => $sslCertificate->provider,
                 'type' => $sslCertificate->type,
+                'issue_date' => $sslCertificate->issue_date->format('Y-m-d'),
                 'expiry_date' => $sslCertificate->expiry_date->format('Y-m-d'),
                 'status' => $sslCertificate->status,
                 'price' => $sslCertificate->price,
+                'payment_status' => $sslCertificate->payment_status,
+                'auto_renew' => $sslCertificate->auto_renew,
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get()
         ]);
@@ -80,10 +93,17 @@ class SslCertificateController extends Controller
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'required|string|max:255',
             'type' => 'required|string|max:255',
+            'issue_date' => 'required|date',
             'expiry_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
+            'payment_status' => 'required|in:paid,unpaid,partially_paid',
+            'auto_renew' => 'boolean',
         ]);
+
+        // Get the client_id from the selected domain
+        $domain = Domain::findOrFail($validated['domain_id']);
+        $validated['client_id'] = $domain->client_id;
 
         $sslCertificate->update($validated);
 

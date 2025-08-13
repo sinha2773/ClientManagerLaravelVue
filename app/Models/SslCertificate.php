@@ -16,13 +16,18 @@ class SslCertificate extends Model
         'domain_id',
         'provider',
         'type',
+        'issue_date',
         'expiry_date',
         'status',
         'price',
+        'payment_status',
+        'auto_renew',
     ];
 
     protected $casts = [
+        'issue_date' => 'date',
         'expiry_date' => 'date',
+        'auto_renew' => 'boolean',
     ];
 
     public function domain(): BelongsTo

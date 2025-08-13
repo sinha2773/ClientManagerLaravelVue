@@ -61,7 +61,7 @@
                             >
                                 <option value="">Select a service</option>
                                 <option v-for="service in availableServices" :key="service.id" :value="service.id">
-                                    {{ getServiceDisplayName(service) }} - ${{ Number(service.price || 0).toFixed(2) }}
+                                                                            {{ getServiceDisplayName(service) }} - {{ formatCurrency(service.price || 0) }}
                                 </option>
                             </select>
                             <InputError :message="form.errors.service_id" class="mt-2" />
@@ -154,6 +154,7 @@ import TextInput from '@/Components/TextInput.vue'
 import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
+import { formatCurrency } from '@/utils/currency.js'
 
 const props = defineProps({
     clients: Array,

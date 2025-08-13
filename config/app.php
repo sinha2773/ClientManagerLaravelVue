@@ -123,4 +123,22 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Currency Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options determine the currency symbol and formatting used
+    | throughout the application for displaying prices and monetary values.
+    |
+    */
+
+    'currency' => [
+        'symbol' => env('CURRENCY_SYMBOL', '$'),
+        'code' => env('CURRENCY_CODE', 'USD'),
+        'decimals' => env('CURRENCY_DECIMALS', 2),
+        'decimal_separator' => env('CURRENCY_DECIMAL_SEPARATOR', '.'),
+        'thousands_separator' => env('CURRENCY_THOUSANDS_SEPARATOR', ','),
+    ],
+
 ];

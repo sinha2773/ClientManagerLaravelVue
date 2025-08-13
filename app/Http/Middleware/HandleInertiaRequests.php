@@ -34,6 +34,13 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'currency' => [
+                'symbol' => config('app.currency.symbol'),
+                'code' => config('app.currency.code'),
+                'decimals' => config('app.currency.decimals'),
+                'decimal_separator' => config('app.currency.decimal_separator'),
+                'thousands_separator' => config('app.currency.thousands_separator'),
+            ],
         ];
     }
 }

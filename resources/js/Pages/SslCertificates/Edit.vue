@@ -1,10 +1,10 @@
 <template>
-    <Head title="Create SSL Certificate" />
+    <Head title="Edit SSL Certificate" />
 
     <AuthenticatedLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Create SSL Certificate
+                Edit SSL Certificate
             </h2>
         </template>
 
@@ -154,7 +154,7 @@
                                 Cancel
                             </a>
                             <PrimaryButton :disabled="form.processing">
-                                Create SSL Certificate
+                                Update SSL Certificate
                             </PrimaryButton>
                         </div>
                     </form>
@@ -171,25 +171,25 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { ref } from 'vue';
 
 const props = defineProps({
+    sslCertificate: Object,
     domains: Array,
 });
 
 const form = useForm({
-    domain_id: '',
-    provider: '',
-    type: '',
-    issue_date: new Date().toISOString().split('T')[0],
-    expiry_date: new Date().toISOString().split('T')[0],
-    status: 'active',
-    price: '',
-    payment_status: 'unpaid',
-    auto_renew: false,
+    domain_id: props.sslCertificate.domain_id,
+    provider: props.sslCertificate.provider,
+    type: props.sslCertificate.type,
+    issue_date: props.sslCertificate.issue_date,
+    expiry_date: props.sslCertificate.expiry_date,
+    status: props.sslCertificate.status,
+    price: props.sslCertificate.price,
+    payment_status: props.sslCertificate.payment_status,
+    auto_renew: props.sslCertificate.auto_renew,
 });
 
 const submit = () => {
-    form.post(route('ssl-certificates.store'));
+    form.put(route('ssl-certificates.update', props.sslCertificate.id));
 };
 </script> 

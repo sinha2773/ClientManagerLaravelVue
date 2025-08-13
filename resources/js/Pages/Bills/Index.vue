@@ -122,9 +122,9 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            ${{ Number(bill.amount).toFixed(2) }}
+                                            {{ formatCurrency(bill.amount) }}
                                             <div v-if="bill.paid_amount > 0" class="text-xs text-gray-500">
-                                                Paid: ${{ Number(bill.paid_amount).toFixed(2) }}
+                                                Paid: {{ formatCurrency(bill.paid_amount) }}
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -228,6 +228,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import TextInput from '@/Components/TextInput.vue'
 import InputLabel from '@/Components/InputLabel.vue'
+import { formatCurrency } from '@/utils/currency.js'
 
 const props = defineProps({
     bills: Object,

@@ -72,11 +72,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Cost</p>
-                                <p class="mt-1">${{ domain.cost }}</p>
+                                <p class="mt-1">{{ formatCurrency(domain.cost) }}</p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Price</p>
-                                <p class="mt-1">${{ domain.price }}</p>
+                                <p class="mt-1">{{ formatCurrency(domain.price) }}</p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Payment Status</p>
@@ -174,6 +174,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { formatCurrency } from '@/utils/currency.js';
 
 const props = defineProps({
     domain: {

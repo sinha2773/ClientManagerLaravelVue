@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Helpers\CurrencyHelper;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 

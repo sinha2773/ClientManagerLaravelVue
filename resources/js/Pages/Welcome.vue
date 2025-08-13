@@ -71,6 +71,7 @@ function handleImageError() {
                                 Log in
                             </Link>
 
+                            <!-- Register link hidden
                             <Link
                                 v-if="canRegister"
                                 :href="route('register')"
@@ -78,6 +79,7 @@ function handleImageError() {
                             >
                                 Register
                             </Link>
+                            -->
                         </template>
                     </nav>
                 </header>

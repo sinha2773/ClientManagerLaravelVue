@@ -34,6 +34,9 @@
                                             Type
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                            Issue Date
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Expiry Date
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -59,6 +62,11 @@
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             {{ certificate.type }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-6 py-4">
+                                            <div class="text-sm text-gray-900">
+                                                {{ formatDate(certificate.issue_date) }}
+                                            </div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             <div class="text-sm text-gray-900">
