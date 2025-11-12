@@ -27,6 +27,8 @@ class Bill extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'total_students',
+        'billing_months',
     ];
 
     protected $casts = [
@@ -35,6 +37,7 @@ class Bill extends Model
         'due_date' => 'date',
         'paid_date' => 'date',
         'approved_at' => 'datetime',
+        'billing_months' => 'array',
     ];
 
     /**

@@ -21,16 +21,37 @@ class DashboardController extends Controller
         // Expiring domains in next 30 days
         $expiringDomains = Domain::with('client')
             ->whereBetween('expiry_date', [$now, $thirtyDaysFromNow])
+            ->orderBy('expiry_date', 'asc')
+            ->get();
+
+        // Already expired domains
+        $expiredDomains = Domain::with('client')
+            ->where('expiry_date', '<', $now)
+            ->orderBy('expiry_date', 'desc')
             ->get();
 
         // Expiring SSL certificates in next 30 days
         $expiringSslCertificates = SslCertificate::with('client', 'domain')
             ->whereBetween('expiry_date', [$now, $thirtyDaysFromNow])
+            ->orderBy('expiry_date', 'asc')
+            ->get();
+
+        // Already expired SSL certificates
+        $expiredSslCertificates = SslCertificate::with('client', 'domain')
+            ->where('expiry_date', '<', $now)
+            ->orderBy('expiry_date', 'desc')
             ->get();
 
         // Hosting services due for renewal in next 30 days
         $dueHostingServices = HostingService::with('client', 'domain')
             ->whereBetween('renewal_date', [$now, $thirtyDaysFromNow])
+            ->orderBy('renewal_date', 'asc')
+            ->get();
+
+        // Hosting services already overdue
+        $overdueHostingServices = HostingService::with('client', 'domain')
+            ->where('renewal_date', '<', $now)
+            ->orderBy('renewal_date', 'desc')
             ->get();
 
         // Summary counts
@@ -40,8 +61,11 @@ class DashboardController extends Controller
             'total_ssl_certificates' => SslCertificate::count(),
             'total_hosting_services' => HostingService::count(),
             'expiring_domains_count' => $expiringDomains->count(),
+            'expired_domains_count' => $expiredDomains->count(),
             'expiring_ssl_count' => $expiringSslCertificates->count(),
+            'expired_ssl_count' => $expiredSslCertificates->count(),
             'due_hosting_count' => $dueHostingServices->count(),
+            'overdue_hosting_count' => $overdueHostingServices->count(),
         ];
 
         // Payment status summaries
@@ -65,11 +89,17 @@ class DashboardController extends Controller
         // Comprehensive billing analytics
         $billingReport = $this->getBillingReport($now);
 
+        // Service expiry trends (next 90 days)
+        $expiryTrends = $this->getExpiryTrends($now);
+
         return Inertia::render('Dashboard', [
             'summary' => $summary,
             'expiringDomains' => $expiringDomains,
+            'expiredDomains' => $expiredDomains,
             'expiringSslCertificates' => $expiringSslCertificates,
+            'expiredSslCertificates' => $expiredSslCertificates,
             'dueHostingServices' => $dueHostingServices,
+            'overdueHostingServices' => $overdueHostingServices,
             'unpaidSummary' => [
                 'domains' => $unpaidDomains,
                 'ssl' => $unpaidSsl,
@@ -77,7 +107,35 @@ class DashboardController extends Controller
             ],
             'monthlyRevenue' => $monthlyRevenue,
             'billingReport' => $billingReport,
+            'expiryTrends' => $expiryTrends,
         ]);
+    }
+
+    /**
+     * Get expiry trends for next 90 days
+     */
+    private function getExpiryTrends(Carbon $now)
+    {
+        $trends = [];
+        
+        for ($i = 0; $i < 3; $i++) {
+            $monthStart = $now->copy()->addMonths($i)->startOfMonth();
+            $monthEnd = $now->copy()->addMonths($i)->endOfMonth();
+            
+            $domains = Domain::whereBetween('expiry_date', [$monthStart, $monthEnd])->count();
+            $ssl = SslCertificate::whereBetween('expiry_date', [$monthStart, $monthEnd])->count();
+            $hosting = HostingService::whereBetween('renewal_date', [$monthStart, $monthEnd])->count();
+            
+            $trends[] = [
+                'month' => $monthStart->format('M Y'),
+                'domains' => $domains,
+                'ssl' => $ssl,
+                'hosting' => $hosting,
+                'total' => $domains + $ssl + $hosting,
+            ];
+        }
+        
+        return $trends;
     }
 
     /**

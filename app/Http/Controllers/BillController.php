@@ -87,7 +87,7 @@ class BillController extends Controller
         ]);
     }
 
-    /**
+        /**
      * Store a newly created bill in storage
      */
     public function store(Request $request)
@@ -98,18 +98,12 @@ class BillController extends Controller
             abort(403, 'Unauthorized to create bills.');
         }
 
-        $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'service_type' => 'required|in:domain,hosting,ssl_certificate',
-            'service_id' => 'required|integer',
-            'description' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'due_date' => 'required|date|after_or_equal:today',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        $validated = $this->validateBillData($request);
 
-        // Validate that the service exists and belongs to the client
-        $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+        // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
+        if ($validated['service_type'] !== 'eims_fee') {
+            $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+        }
 
         $bill = Bill::create([
             ...$validated,
@@ -132,18 +126,20 @@ class BillController extends Controller
 
         $bill->load(['client', 'creator', 'approver']);
         
-        // Get the related service details
+        // Get the related service details (not applicable for EIMS Fee)
         $service = null;
-        switch ($bill->service_type) {
-            case 'domain':
-                $service = Domain::find($bill->service_id);
-                break;
-            case 'hosting':
-                $service = HostingService::with('domain')->find($bill->service_id);
-                break;
-            case 'ssl_certificate':
-                $service = SslCertificate::with('domain')->find($bill->service_id);
-                break;
+        if ($bill->service_type !== 'eims_fee') {
+            switch ($bill->service_type) {
+                case 'domain':
+                    $service = Domain::find($bill->service_id);
+                    break;
+                case 'hosting':
+                    $service = HostingService::with('domain')->find($bill->service_id);
+                    break;
+                case 'ssl_certificate':
+                    $service = SslCertificate::with('domain')->find($bill->service_id);
+                    break;
+            }
         }
 
         return Inertia::render('Bills/Show', [
@@ -190,25 +186,17 @@ class BillController extends Controller
             abort(403, 'Unauthorized to edit this bill.');
         }
 
-        $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'service_type' => 'required|in:domain,hosting,ssl_certificate',
-            'service_id' => 'required|integer',
-            'description' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'due_date' => 'required|date|after_or_equal:today',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        $validated = $this->validateBillData($request, $bill);
 
-        // Validate that the service exists and belongs to the client
-        $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+        // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
+        if ($validated['service_type'] !== 'eims_fee') {
+            $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+        }
 
         $bill->update($validated);
 
         return redirect()->route('bills.show', $bill)->with('success', 'Bill updated successfully.');
-    }
-
-    /**
+    }    /**
      * Remove the specified bill from storage
      */
     public function destroy(Bill $bill)
@@ -298,5 +286,32 @@ class BillController extends Controller
         if (!$service) {
             abort(422, 'The selected service does not exist or does not belong to the specified client.');
         }
+    }
+
+    /**
+     * Common validation rules for bill data
+     */
+    private function validateBillData(Request $request, ?Bill $bill = null): array
+    {
+        $rules = [
+            'client_id' => 'required|exists:clients,id',
+            'service_type' => 'required|in:domain,hosting,ssl_certificate,eims_fee',
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'due_date' => 'required|date|after_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+        ];
+
+        // Service ID is required only for non-EIMS Fee types
+        if ($request->service_type !== 'eims_fee') {
+            $rules['service_id'] = 'required|integer';
+        } else {
+            $rules['service_id'] = 'nullable|integer';
+            $rules['total_students'] = 'required|integer|min:1';
+            $rules['billing_months'] = 'required|array|min:1';
+            $rules['billing_months.*'] = 'required|string|date_format:Y-m';
+        }
+
+        return $request->validate($rules);
     }
 }

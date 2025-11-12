@@ -70,6 +70,18 @@ const showingNavigationDropdown = ref(false);
                                     Bills
                                 </NavLink>
                                 <NavLink
+                                    :href="route('employees.index')"
+                                    :active="route().current('employees.*')"
+                                >
+                                    Employees
+                                </NavLink>
+                                <NavLink
+                                    :href="route('payroll.index')"
+                                    :active="route().current('payroll.*')"
+                                >
+                                    Payroll
+                                </NavLink>
+                                <NavLink
                                     :href="route('user-management.index')"
                                     :active="route().current('user-management.*')"
                                 >
@@ -211,6 +223,18 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('bills.*')"
                         >
                             Bills
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('employees.index')"
+                            :active="route().current('employees.*')"
+                        >
+                            Employees
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('payroll.index')"
+                            :active="route().current('payroll.*')"
+                        >
+                            Payroll
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('user-management.index')"

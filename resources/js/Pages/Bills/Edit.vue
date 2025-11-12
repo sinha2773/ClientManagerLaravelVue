@@ -47,6 +47,7 @@
                                 <option value="domain">Domain</option>
                                 <option value="hosting">Hosting Service</option>
                                 <option value="ssl_certificate">SSL Certificate</option>
+                                <option value="eims_fee">EIMS Fee</option>
                             </select>
                             <InputError :message="form.errors.service_type" class="mt-2" />
                         </div>
@@ -90,7 +91,7 @@
 
                         <!-- Amount -->
                         <div>
-                            <InputLabel for="amount" value="Amount ($)" />
+                            <InputLabel for="amount" value="Amount (Tk)" />
                             <TextInput
                                 id="amount"
                                 v-model="form.amount"
@@ -103,7 +104,54 @@
                             <InputError :message="form.errors.amount" class="mt-2" />
                         </div>
 
-                        <!-- Due Date -->
+                        <!-- EIMS Fee Fields -->
+                        <div v-if="form.service_type === 'eims_fee'" class="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                            <h3 class="font-medium text-blue-900">EIMS Fee Details</h3>
+                            
+                            <div>
+                                <InputLabel for="total_students" value="Total Students" />
+                                <TextInput
+                                    id="total_students"
+                                    v-model="form.total_students"
+                                    type="number"
+                                    min="0"
+                                    class="mt-1 block w-full"
+                                    required
+                                />
+                                <InputError :message="form.errors.total_students" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <InputLabel value="Billing Months" />
+                                <div class="mt-2 space-y-2">
+                                    <div v-for="(monthYear, index) in form.billing_months" :key="index" class="flex gap-2">
+                                        <input
+                                            v-model="form.billing_months[index]"
+                                            type="month"
+                                            class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="removeBillingMonth(index)"
+                                            class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="addBillingMonth"
+                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Add Billing Month
+                                </button>
+                                <InputError :message="form.errors.billing_months" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <!-- Payment Status -->
                         <div>
                             <InputLabel for="due_date" value="Due Date" />
                             <TextInput
@@ -174,6 +222,8 @@ const form = useForm({
     amount: props.bill.amount,
     due_date: props.bill.due_date,
     notes: props.bill.notes || '',
+    total_students: props.bill.total_students || '',
+    billing_months: props.bill.billing_months || [''],
 })
 
 const availableServices = ref([])
@@ -210,8 +260,22 @@ const updateServiceOptions = () => {
                 ssl.domain && ssl.domain.client_id == form.client_id
             )
             break
+        case 'eims_fee':
+            // EIMS Fee doesn't need service selection
+            availableServices.value = []
+            break
         default:
             availableServices.value = []
+    }
+}
+
+const addBillingMonth = () => {
+    form.billing_months.push('')
+}
+
+const removeBillingMonth = (index) => {
+    if (form.billing_months.length > 1) {
+        form.billing_months.splice(index, 1)
     }
 }
 
@@ -241,7 +305,8 @@ const formatServiceType = (type) => {
     const types = {
         domain: 'Domain',
         hosting: 'Hosting Service',
-        ssl_certificate: 'SSL Certificate'
+        ssl_certificate: 'SSL Certificate',
+        eims_fee: 'EIMS Fee'
     }
     return types[type] || type
 }

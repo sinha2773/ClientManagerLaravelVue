@@ -8,6 +8,8 @@ use App\Http\Controllers\SslCertificateController;
 use App\Http\Controllers\HostingServiceController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\PaySalaryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -70,6 +72,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('user-management', UserManagementController::class);
     Route::patch('/user-management/{userManagement}/toggle-status', [UserManagementController::class, 'toggleStatus'])
         ->name('user-management.toggle-status');
+    
+    // Employee routes
+    Route::resource('employees', EmployeeController::class);
+    
+    // Payroll routes
+    Route::get('/payroll', [PaySalaryController::class, 'index'])->name('payroll.index');
+    Route::post('/payroll', [PaySalaryController::class, 'store'])->name('payroll.store');
+    Route::put('/payroll/{paySalary}', [PaySalaryController::class, 'update'])->name('payroll.update');
+    Route::delete('/payroll/{paySalary}', [PaySalaryController::class, 'destroy'])->name('payroll.destroy');
+    Route::get('/payroll/report', [PaySalaryController::class, 'report'])->name('payroll.report');
     
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

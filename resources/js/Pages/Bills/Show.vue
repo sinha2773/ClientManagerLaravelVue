@@ -160,7 +160,7 @@
                             <form @submit.prevent="updatePayment" class="space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <InputLabel for="paid_amount" value="Paid Amount ($)" />
+                                        <InputLabel for="paid_amount" value="Paid Amount (Tk)" />
                                         <TextInput
                                             id="paid_amount"
                                             v-model="paymentForm.paid_amount"
