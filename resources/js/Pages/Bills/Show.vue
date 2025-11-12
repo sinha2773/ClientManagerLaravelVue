@@ -123,6 +123,34 @@
                     </div>
                 </div>
 
+                <!-- EIMS Fee Details -->
+                <div v-if="bill.service_type === 'eims_fee'" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">EIMS Fee Details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Total Students</label>
+                                <p class="text-3xl font-bold text-blue-900">{{ bill.total_students }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Billing Months</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <span 
+                                        v-for="(month, index) in bill.billing_months" 
+                                        :key="index"
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                                    >
+                                        {{ formatMonth(month) }}
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    Total: {{ bill.billing_months ? bill.billing_months.length : 0 }} month(s)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Payment Information -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -131,15 +159,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700">Total Amount</label>
-                                <p class="mt-1 text-2xl font-semibold text-gray-900">${{ Number(bill.amount).toFixed(2) }}</p>
+                                <p class="mt-1 text-2xl font-semibold text-gray-900">Tk {{ Number(bill.amount).toFixed(2) }}</p>
                             </div>
                             <div class="bg-green-50 p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700">Paid Amount</label>
-                                <p class="mt-1 text-2xl font-semibold text-green-600">${{ Number(bill.paid_amount).toFixed(2) }}</p>
+                                <p class="mt-1 text-2xl font-semibold text-green-600">Tk {{ Number(bill.paid_amount).toFixed(2) }}</p>
                             </div>
                             <div class="bg-red-50 p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700">Remaining Amount</label>
-                                <p class="mt-1 text-2xl font-semibold text-red-600">${{ remainingAmount.toFixed(2) }}</p>
+                                <p class="mt-1 text-2xl font-semibold text-red-600">Tk {{ remainingAmount.toFixed(2) }}</p>
                             </div>
                         </div>
 
@@ -260,9 +288,17 @@ const formatServiceType = (type) => {
     const types = {
         domain: 'Domain',
         hosting: 'Hosting',
-        ssl_certificate: 'SSL Certificate'
+        ssl_certificate: 'SSL Certificate',
+        eims_fee: 'EIMS Fee'
     }
     return types[type] || type
+}
+
+const formatMonth = (monthYear) => {
+    // Convert YYYY-MM to readable format like "October 2025"
+    const [year, month] = monthYear.split('-')
+    const date = new Date(year, parseInt(month) - 1)
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
 const formatPaymentStatus = (status) => {
@@ -296,7 +332,8 @@ const getServiceTypeClass = (type) => {
     const classes = {
         domain: 'bg-blue-100 text-blue-800',
         hosting: 'bg-green-100 text-green-800',
-        ssl_certificate: 'bg-purple-100 text-purple-800'
+        ssl_certificate: 'bg-purple-100 text-purple-800',
+        eims_fee: 'bg-indigo-100 text-indigo-800'
     }
     return classes[type] || 'bg-gray-100 text-gray-800'
 }
