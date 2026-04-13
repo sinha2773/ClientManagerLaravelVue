@@ -76,6 +76,22 @@
                                 </select>
                                 <InputError :message="form.errors.status" class="mt-2" />
                             </div>
+
+                            <!-- Client Category -->
+                            <div>
+                                <InputLabel for="client_category_id" value="Client Category" />
+                                <select
+                                    id="client_category_id"
+                                    v-model="form.client_category_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option :value="null">Select Category</option>
+                                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                                        {{ category.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.client_category_id" class="mt-2" />
+                            </div>
                         </div>
 
                         <!-- Address -->
@@ -117,6 +133,10 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { ref } from 'vue';
 
+const props = defineProps({
+    categories: Array,
+});
+
 const form = useForm({
     name: '',
     email: '',
@@ -124,6 +144,7 @@ const form = useForm({
     company: '',
     address: '',
     status: 'active',
+    client_category_id: null,
 });
 
 const submit = () => {

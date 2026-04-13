@@ -1,17 +1,17 @@
 <template>
-    <Head title="Clients" />
+    <Head title="Client Categories" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Clients
+                    Settings - Client Categories
                 </h2>
                 <Link
-                    :href="route('clients.create')"
+                    :href="route('settings.client-categories.create')"
                     class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                    Add New Client
+                    Add New Category
                 </Link>
             </div>
         </template>
@@ -28,10 +28,7 @@
                                             Name
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                            Contact
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                            Services
+                                            Description
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Status
@@ -42,51 +39,33 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 bg-white">
-                                    <tr v-for="client in clients" :key="client.id">
-                                         <td class="whitespace-nowrap px-6 py-4">
-                                             <div class="font-medium text-gray-900">{{ client.name }}</div>
-                                             <div class="text-sm text-gray-500">{{ client.company }}</div>
-                                             <div v-if="client.category" class="text-xs text-indigo-600 mt-1">
-                                                 {{ client.category.name }}
-                                             </div>
-                                         </td>
+                                    <tr v-for="category in categories" :key="category.id">
                                         <td class="whitespace-nowrap px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ client.email }}</div>
-                                            <div class="text-sm text-gray-500">{{ client.phone }}</div>
+                                            <div class="font-medium text-gray-900">{{ category.name }}</div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
-                                            <div class="space-x-2">
-                                                <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                                                    {{ client.domains_count }} Domains
-                                                </span>
-                                                <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
-                                                    {{ client.hosting_count }} Hosting
-                                                </span>
-                                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                                                    {{ client.ssl_count }} SSL
-                                                </span>
-                                            </div>
+                                            <div class="text-sm text-gray-500">{{ category.description }}</div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             <span
                                                 :class="{
-                                                    'bg-green-100 text-green-800': client.status === 'active',
-                                                    'bg-red-100 text-red-800': client.status === 'inactive'
+                                                    'bg-green-100 text-green-800': category.status === 'active',
+                                                    'bg-red-100 text-red-800': category.status === 'inactive'
                                                 }"
                                                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                             >
-                                                {{ client.status }}
+                                                {{ category.status }}
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <Link
-                                                :href="route('clients.edit', client.id)"
+                                                :href="route('settings.client-categories.edit', category.id)"
                                                 class="text-indigo-600 hover:text-indigo-900"
                                             >
                                                 Edit
                                             </Link>
                                             <button
-                                                @click="deleteClient(client.id)"
+                                                @click="deleteCategory(category.id)"
                                                 class="ml-4 text-red-600 hover:text-red-900"
                                             >
                                                 Delete
@@ -106,16 +85,15 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
-    clients: Array,
+    categories: Array,
 });
 
-const deleteClient = (id) => {
-    if (confirm('Are you sure you want to delete this client?')) {
-        router.delete(route('clients.destroy', id));
+const deleteCategory = (id) => {
+    if (confirm('Are you sure you want to delete this category?')) {
+        router.delete(route('settings.client-categories.destroy', id));
     }
 };
-</script> 
+</script>

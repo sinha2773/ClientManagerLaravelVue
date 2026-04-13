@@ -10,7 +10,7 @@ class ClientController extends Controller
 {
     public function index()
     {
-        $clients = Client::with(['domains', 'hostingServices', 'sslCertificates'])
+        $clients = Client::with(['domains', 'hostingServices', 'sslCertificates', 'category'])
             ->latest()
             ->get()
             ->map(function ($client) {
@@ -21,6 +21,8 @@ class ClientController extends Controller
                     'phone' => $client->phone,
                     'company' => $client->company,
                     'status' => $client->status,
+                    'client_category_id' => $client->client_category_id,
+                    'category' => $client->category,
                     'domains_count' => $client->domains->count(),
                     'hosting_count' => $client->hostingServices->count(),
                     'ssl_count' => $client->sslCertificates->count(),
@@ -29,13 +31,17 @@ class ClientController extends Controller
             });
 
         return Inertia::render('Clients/Index', [
-            'clients' => $clients
+            'clients' => $clients,
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('Clients/Create');
+        $categories = \App\Models\ClientCategory::where('status', 'active')->get();
+
+        return Inertia::render('Clients/Create', [
+            'categories' => $categories,
+        ]);
     }
 
     public function store(Request $request)
@@ -47,6 +53,7 @@ class ClientController extends Controller
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
+            'client_category_id' => 'nullable|exists:client_categories,id',
         ]);
 
         Client::create($validated);
@@ -58,20 +65,23 @@ class ClientController extends Controller
     public function show(Client $client)
     {
         $client->load(['domains', 'sslCertificates', 'hostingServices']);
-        
+
         return Inertia::render('Clients/Show', [
             'client' => $client,
             'stats' => [
                 'total_spent' => $client->getTotalSpent(),
-                'active_services' => $client->getActiveServicesCount()
-            ]
+                'active_services' => $client->getActiveServicesCount(),
+            ],
         ]);
     }
 
     public function edit(Client $client)
     {
+        $categories = \App\Models\ClientCategory::where('status', 'active')->get();
+
         return Inertia::render('Clients/Edit', [
-            'client' => $client
+            'client' => $client,
+            'categories' => $categories,
         ]);
     }
 
@@ -84,6 +94,7 @@ class ClientController extends Controller
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
+            'client_category_id' => 'nullable|exists:client_categories,id',
         ]);
 
         $client->update($validated);
@@ -99,4 +110,4 @@ class ClientController extends Controller
         return redirect()->route('clients.index')
             ->with('message', 'Client deleted successfully.');
     }
-} 
+}

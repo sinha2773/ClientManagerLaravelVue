@@ -89,6 +89,21 @@
                                     </select>
                                     <InputError class="mt-2" :message="form.errors.status" />
                                 </div>
+
+                                <div>
+                                    <InputLabel for="client_category_id" value="Client Category" />
+                                    <select
+                                        id="client_category_id"
+                                        v-model="form.client_category_id"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    >
+                                        <option :value="null">Select Category</option>
+                                        <option v-for="category in categories" :key="category.id" :value="category.id">
+                                            {{ category.name }}
+                                        </option>
+                                    </select>
+                                    <InputError class="mt-2" :message="form.errors.client_category_id" />
+                                </div>
                             </div>
 
                             <div>
@@ -153,6 +168,10 @@ const props = defineProps({
     client: {
         type: Object,
         required: true
+    },
+    categories: {
+        type: Array,
+        required: true
     }
 });
 
@@ -164,7 +183,8 @@ const form = useForm({
     address: props.client.address,
     status: props.client.status,
     active: props.client.active,
-    notes: props.client.notes
+    notes: props.client.notes,
+    client_category_id: props.client.client_category_id
 });
 
 function submit() {

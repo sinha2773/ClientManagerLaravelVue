@@ -17,7 +17,13 @@ class Client extends Model
         'company',
         'address',
         'status',
+        'client_category_id',
     ];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ClientCategory::class, 'client_category_id');
+    }
 
     public function domains(): HasMany
     {
@@ -72,4 +78,4 @@ class Client extends Model
 
         return $activeDomains + $activeSslCertificates + $activeHostingServices;
     }
-} 
+}
