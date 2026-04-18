@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HostingService;
 use App\Models\Domain;
+use App\Models\HostingService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,29 +15,34 @@ class HostingServiceController extends Controller
             ->latest()
             ->get()
             ->map(function ($service) {
+                $daysUntilExpiry = (int) now()->diffInDays($service->renewal_date, false);
+
                 return [
                     'id' => $service->id,
                     'domain' => [
                         'id' => $service->domain->id,
                         'name' => $service->domain->name,
                     ],
+                    'client_id' => $service->client_id,
                     'provider' => $service->provider,
                     'package_name' => $service->package_name,
                     'renewal_date' => $service->renewal_date->format('Y-m-d'),
                     'status' => $service->status,
                     'price' => $service->price,
+                    'is_expired' => $daysUntilExpiry < 0,
+                    'days_until_expiry' => $daysUntilExpiry,
                 ];
             });
 
         return Inertia::render('HostingServices/Index', [
-            'hostingServices' => $hostingServices
+            'hostingServices' => $hostingServices,
         ]);
     }
 
     public function create()
     {
         return Inertia::render('HostingServices/Create', [
-            'domains' => Domain::select('id', 'name')->orderBy('name')->get()
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -86,7 +91,7 @@ class HostingServiceController extends Controller
                 'server_ip' => $hostingService->server_ip,
                 'control_panel_url' => $hostingService->control_panel_url,
             ],
-            'domains' => Domain::select('id', 'name')->orderBy('name')->get()
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -124,4 +129,4 @@ class HostingServiceController extends Controller
         return redirect()->route('hosting-services.index')
             ->with('message', 'Hosting service deleted successfully.');
     }
-} 
+}

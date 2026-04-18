@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SslCertificate;
 use App\Models\Domain;
+use App\Models\SslCertificate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,12 +15,15 @@ class SslCertificateController extends Controller
             ->latest()
             ->get()
             ->map(function ($certificate) {
+                $daysUntilExpiry = (int) now()->diffInDays($certificate->expiry_date, false);
+
                 return [
                     'id' => $certificate->id,
                     'domain' => [
                         'id' => $certificate->domain->id,
                         'name' => $certificate->domain->name,
                     ],
+                    'client_id' => $certificate->client_id,
                     'provider' => $certificate->provider,
                     'type' => $certificate->type,
                     'issue_date' => $certificate->issue_date->format('Y-m-d'),
@@ -29,18 +32,20 @@ class SslCertificateController extends Controller
                     'price' => $certificate->price,
                     'payment_status' => $certificate->payment_status,
                     'auto_renew' => $certificate->auto_renew,
+                    'is_expired' => $daysUntilExpiry < 0,
+                    'days_until_expiry' => $daysUntilExpiry,
                 ];
             });
 
         return Inertia::render('SslCertificates/Index', [
-            'sslCertificates' => $sslCertificates
+            'sslCertificates' => $sslCertificates,
         ]);
     }
 
     public function create()
     {
         return Inertia::render('SslCertificates/Create', [
-            'domains' => Domain::select('id', 'name')->orderBy('name')->get()
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -83,7 +88,7 @@ class SslCertificateController extends Controller
                 'payment_status' => $sslCertificate->payment_status,
                 'auto_renew' => $sslCertificate->auto_renew,
             ],
-            'domains' => Domain::select('id', 'name')->orderBy('name')->get()
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -118,4 +123,4 @@ class SslCertificateController extends Controller
         return redirect()->route('ssl-certificates.index')
             ->with('message', 'SSL certificate deleted successfully.');
     }
-} 
+}

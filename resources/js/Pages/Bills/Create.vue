@@ -209,6 +209,10 @@ const props = defineProps({
     domains: Array,
     hostingServices: Array,
     sslCertificates: Array,
+    prefill: {
+        type: Object,
+        default: () => ({ client_id: null, service_type: null, service_id: null }),
+    },
 })
 
 const form = useForm({
@@ -249,8 +253,8 @@ const updateServiceOptions = () => {
             availableServices.value = props.hostingServices.filter(service => service.client_id == form.client_id)
             break
         case 'ssl_certificate':
-            availableServices.value = props.sslCertificates.filter(ssl => 
-                ssl.domain && ssl.domain.client_id == form.client_id
+            availableServices.value = props.sslCertificates.filter(ssl =>
+                ssl.client_id == form.client_id
             )
             break
         case 'eims_fee':
@@ -309,9 +313,41 @@ const submit = () => {
 }
 
 onMounted(() => {
-    // Set default due date to 30 days from now
     const defaultDueDate = new Date()
     defaultDueDate.setDate(defaultDueDate.getDate() + 30)
     form.due_date = defaultDueDate.toISOString().split('T')[0]
+
+    if (props.prefill) {
+        if (props.prefill.client_id) {
+            form.client_id = String(props.prefill.client_id)
+        }
+        if (props.prefill.service_type) {
+            form.service_type = props.prefill.service_type
+        }
+        if (props.prefill.client_id && props.prefill.service_type) {
+            updateServiceOptions()
+            if (props.prefill.service_id) {
+                form.service_id = String(props.prefill.service_id)
+                updateAmountFromService()
+            }
+        }
+        if (props.prefill.service_type && props.prefill.service_id) {
+            const serviceMap = {
+                domain: props.domains,
+                hosting: props.hostingServices,
+                ssl_certificate: props.sslCertificates,
+            }
+            const services = serviceMap[props.prefill.service_type] || []
+            const service = services.find(s => s.id == props.prefill.service_id)
+            if (service) {
+                const nameMap = {
+                    domain: service.name,
+                    hosting: `${service.package_name} (${service.domain?.name || 'No domain'})`,
+                    ssl_certificate: `${service.type} - ${service.provider} (${service.domain?.name || 'No domain'})`,
+                }
+                form.description = `Renewal for ${nameMap[props.prefill.service_type]}`
+            }
+        }
+    }
 })
 </script> 

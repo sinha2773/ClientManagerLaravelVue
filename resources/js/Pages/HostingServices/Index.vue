@@ -65,10 +65,16 @@
                                                 {{ formatDate(service.renewal_date) }}
                                             </div>
                                             <div
-                                                v-if="isExpiringSoon(service.renewal_date)"
+                                                v-if="service.is_expired"
                                                 class="mt-1 text-xs font-medium text-red-600"
                                             >
-                                                Expires in {{ getDaysUntilExpiry(service.renewal_date) }} days
+                                                Expired {{ Math.abs(service.days_until_expiry) }} days ago
+                                            </div>
+                                            <div
+                                                v-else-if="isExpiringSoon(service.renewal_date)"
+                                                class="mt-1 text-xs font-medium text-red-600"
+                                            >
+                                                Expires in {{ service.days_until_expiry }} days
                                             </div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
@@ -83,6 +89,13 @@
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                            <Link
+                                                v-if="service.is_expired || service.days_until_expiry <= 90"
+                                                :href="route('bills.create', { client_id: service.client_id, service_type: 'hosting', service_id: service.id })"
+                                                class="mr-4 text-green-600 hover:text-green-900 font-semibold"
+                                            >
+                                                Generate Bill
+                                            </Link>
                                             <Link
                                                 :href="route('hosting-services.edit', service.id)"
                                                 class="text-indigo-600 hover:text-indigo-900"

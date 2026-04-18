@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Domain;
 use App\Models\Client;
+use App\Models\Domain;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,6 +15,8 @@ class DomainController extends Controller
             ->latest()
             ->get()
             ->map(function ($domain) {
+                $daysUntilExpiry = (int) now()->diffInDays($domain->expiry_date, false);
+
                 return [
                     'id' => $domain->id,
                     'name' => $domain->name,
@@ -22,6 +24,7 @@ class DomainController extends Controller
                         'id' => $domain->client->id,
                         'name' => $domain->client->name,
                     ],
+                    'client_id' => $domain->client_id,
                     'registrar' => $domain->registrar,
                     'registration_date' => $domain->registration_date->format('Y-m-d'),
                     'expiry_date' => $domain->expiry_date->format('Y-m-d'),
@@ -29,21 +32,23 @@ class DomainController extends Controller
                     'status' => $domain->status,
                     'price' => $domain->price,
                     'payment_status' => $domain->payment_status,
-                    'has_hosting' => !is_null($domain->hostingService),
-                    'has_ssl' => !is_null($domain->sslCertificate),
+                    'has_hosting' => ! is_null($domain->hostingService),
+                    'has_ssl' => ! is_null($domain->sslCertificate),
                     'is_expiring_soon' => $domain->isExpiringSoon(),
+                    'is_expired' => $daysUntilExpiry < 0,
+                    'days_until_expiry' => $daysUntilExpiry,
                 ];
             });
 
         return Inertia::render('Domains/Index', [
-            'domains' => $domains
+            'domains' => $domains,
         ]);
     }
 
     public function create()
     {
         return Inertia::render('Domains/Create', [
-            'clients' => Client::select('id', 'name')->orderBy('name')->get()
+            'clients' => Client::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -70,10 +75,10 @@ class DomainController extends Controller
     public function show(Domain $domain)
     {
         $domain->load('client');
-        
+
         return Inertia::render('Domains/Show', [
             'domain' => $domain,
-            'profit' => $domain->getProfit()
+            'profit' => $domain->getProfit(),
         ]);
     }
 
@@ -81,7 +86,7 @@ class DomainController extends Controller
     {
         return Inertia::render('Domains/Edit', [
             'domain' => $domain,
-            'clients' => Client::select('id', 'name')->orderBy('name')->get()
+            'clients' => Client::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -122,7 +127,7 @@ class DomainController extends Controller
 
     public function approvePaymentLevel2(Domain $domain)
     {
-        if (!$domain->payment_approved_level1) {
+        if (! $domain->payment_approved_level1) {
             return back()->with('error', 'Level 1 approval is required first.');
         }
 
@@ -130,4 +135,4 @@ class DomainController extends Controller
 
         return back()->with('success', 'Payment fully approved.');
     }
-} 
+}

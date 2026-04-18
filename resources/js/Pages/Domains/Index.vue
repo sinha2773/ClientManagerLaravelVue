@@ -63,10 +63,16 @@
                                                 {{ formatDate(domain.expiry_date) }}
                                             </div>
                                             <div
-                                                v-if="domain.is_expiring_soon"
+                                                v-if="domain.is_expired"
                                                 class="mt-1 text-xs font-medium text-red-600"
                                             >
-                                                Expires in {{ getDaysUntilExpiry(domain.expiry_date) }} days
+                                                Expired {{ Math.abs(domain.days_until_expiry) }} days ago
+                                            </div>
+                                            <div
+                                                v-else-if="domain.is_expiring_soon"
+                                                class="mt-1 text-xs font-medium text-red-600"
+                                            >
+                                                Expires in {{ domain.days_until_expiry }} days
                                             </div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
@@ -110,6 +116,13 @@
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <Link
+                                                v-if="domain.is_expired || domain.days_until_expiry <= 90"
+                                                :href="route('bills.create', { client_id: domain.client_id, service_type: 'domain', service_id: domain.id })"
+                                                class="mr-4 text-green-600 hover:text-green-900 font-semibold"
+                                            >
+                                                Generate Bill
+                                            </Link>
+                                            <Link
                                                 :href="route('domains.edit', domain.id)"
                                                 class="text-indigo-600 hover:text-indigo-900"
                                             >
@@ -136,7 +149,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -151,10 +163,5 @@ const deleteDomain = (id) => {
 
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString();
-};
-
-const getDaysUntilExpiry = (expiryDate) => {
-    const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-    return days;
 };
 </script> 

@@ -8,9 +8,8 @@ use App\Models\Domain;
 use App\Models\HostingService;
 use App\Models\SslCertificate;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class BillController extends Controller
 {
@@ -20,8 +19,8 @@ class BillController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills()) {
+
+        if (! $user->canManageBills()) {
             abort(403, 'Unauthorized to access bills.');
         }
 
@@ -47,10 +46,10 @@ class BillController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('bill_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('client', function ($clientQuery) use ($search) {
-                      $clientQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('client', function ($clientQuery) use ($search) {
+                        $clientQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -69,32 +68,37 @@ class BillController extends Controller
     public function create()
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills()) {
+
+        if (! $user->canManageBills()) {
             abort(403, 'Unauthorized to create bills.');
         }
 
         $clients = Client::select('id', 'name', 'email')->get();
         $domains = Domain::with('client')->select('id', 'name', 'client_id', 'price')->get();
         $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
-        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'domain_id', 'price')->get();
+        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
 
         return Inertia::render('Bills/Create', [
             'clients' => $clients,
             'domains' => $domains,
             'hostingServices' => $hostingServices,
             'sslCertificates' => $sslCertificates,
+            'prefill' => [
+                'client_id' => $request->query('client_id'),
+                'service_type' => $request->query('service_type'),
+                'service_id' => $request->query('service_id'),
+            ],
         ]);
     }
 
-        /**
+    /**
      * Store a newly created bill in storage
      */
     public function store(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills()) {
+
+        if (! $user->canManageBills()) {
             abort(403, 'Unauthorized to create bills.');
         }
 
@@ -119,13 +123,13 @@ class BillController extends Controller
     public function show(Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills()) {
+
+        if (! $user->canManageBills()) {
             abort(403, 'Unauthorized to view bills.');
         }
 
         $bill->load(['client', 'creator', 'approver']);
-        
+
         // Get the related service details (not applicable for EIMS Fee)
         $service = null;
         if ($bill->service_type !== 'eims_fee') {
@@ -156,15 +160,15 @@ class BillController extends Controller
     public function edit(Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills() || $bill->status !== 'draft') {
+
+        if (! $user->canManageBills() || $bill->status !== 'draft') {
             abort(403, 'Unauthorized to edit this bill.');
         }
 
         $clients = Client::select('id', 'name', 'email')->get();
         $domains = Domain::with('client')->select('id', 'name', 'client_id', 'price')->get();
         $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
-        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'domain_id', 'price')->get();
+        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
 
         return Inertia::render('Bills/Edit', [
             'bill' => $bill,
@@ -181,8 +185,8 @@ class BillController extends Controller
     public function update(Request $request, Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills() || $bill->status !== 'draft') {
+
+        if (! $user->canManageBills() || $bill->status !== 'draft') {
             abort(403, 'Unauthorized to edit this bill.');
         }
 
@@ -196,14 +200,16 @@ class BillController extends Controller
         $bill->update($validated);
 
         return redirect()->route('bills.show', $bill)->with('success', 'Bill updated successfully.');
-    }    /**
+    }
+
+    /**
      * Remove the specified bill from storage
      */
     public function destroy(Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills() || $bill->status !== 'draft') {
+
+        if (! $user->canManageBills() || $bill->status !== 'draft') {
             abort(403, 'Unauthorized to delete this bill.');
         }
 
@@ -218,8 +224,8 @@ class BillController extends Controller
     public function approve(Request $request, Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canApproveBills()) {
+
+        if (! $user->canApproveBills()) {
             abort(403, 'Unauthorized to approve bills.');
         }
 
@@ -242,13 +248,13 @@ class BillController extends Controller
     public function updatePayment(Request $request, Bill $bill)
     {
         $user = Auth::user();
-        
-        if (!$user->canManageBills()) {
+
+        if (! $user->canManageBills()) {
             abort(403, 'Unauthorized to update payment status.');
         }
 
         $validated = $request->validate([
-            'paid_amount' => 'required|numeric|min:0|max:' . $bill->amount,
+            'paid_amount' => 'required|numeric|min:0|max:'.$bill->amount,
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -283,7 +289,7 @@ class BillController extends Controller
                 throw new \InvalidArgumentException('Invalid service type.');
         }
 
-        if (!$service) {
+        if (! $service) {
             abort(422, 'The selected service does not exist or does not belong to the specified client.');
         }
     }

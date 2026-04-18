@@ -73,10 +73,16 @@
                                                 {{ formatDate(certificate.expiry_date) }}
                                             </div>
                                             <div
-                                                v-if="isExpiringSoon(certificate.expiry_date)"
+                                                v-if="certificate.is_expired"
                                                 class="mt-1 text-xs font-medium text-red-600"
                                             >
-                                                Expires in {{ getDaysUntilExpiry(certificate.expiry_date) }} days
+                                                Expired {{ Math.abs(certificate.days_until_expiry) }} days ago
+                                            </div>
+                                            <div
+                                                v-else-if="isExpiringSoon(certificate.expiry_date)"
+                                                class="mt-1 text-xs font-medium text-red-600"
+                                            >
+                                                Expires in {{ certificate.days_until_expiry }} days
                                             </div>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
@@ -91,6 +97,13 @@
                                             </span>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                            <Link
+                                                v-if="certificate.is_expired || certificate.days_until_expiry <= 90"
+                                                :href="route('bills.create', { client_id: certificate.client_id, service_type: 'ssl_certificate', service_id: certificate.id })"
+                                                class="mr-4 text-green-600 hover:text-green-900 font-semibold"
+                                            >
+                                                Generate Bill
+                                            </Link>
                                             <Link
                                                 :href="route('ssl-certificates.edit', certificate.id)"
                                                 class="text-indigo-600 hover:text-indigo-900"
