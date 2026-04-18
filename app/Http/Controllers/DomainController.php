@@ -78,7 +78,6 @@ class DomainController extends Controller
 
         return Inertia::render('Domains/Show', [
             'domain' => $domain,
-            'profit' => $domain->getProfit(),
         ]);
     }
 
