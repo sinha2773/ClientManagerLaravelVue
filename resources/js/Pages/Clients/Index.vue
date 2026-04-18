@@ -45,10 +45,14 @@
                                     <tr v-for="client in clients" :key="client.id">
                                          <td class="whitespace-nowrap px-6 py-4">
                                              <div class="font-medium text-gray-900">{{ client.name }}</div>
+                                             <div v-if="client.short_name" class="text-sm text-gray-400">{{ client.short_name }}</div>
                                              <div class="text-sm text-gray-500">{{ client.company }}</div>
                                              <div v-if="client.category" class="text-xs text-indigo-600 mt-1">
-                                                 {{ client.category.name }}
-                                             </div>
+                                                  {{ client.category.name }}
+                                              </div>
+                                              <div v-if="client.client_type" class="text-xs text-gray-400 mt-1 capitalize">
+                                                  {{ client.client_type }}
+                                              </div>
                                          </td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             <div class="text-sm text-gray-900">{{ client.email }}</div>

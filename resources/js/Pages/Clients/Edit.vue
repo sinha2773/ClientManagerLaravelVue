@@ -44,6 +44,17 @@
                                 </div>
 
                                 <div>
+                                    <InputLabel for="short_name" value="Short Name" />
+                                    <TextInput
+                                        id="short_name"
+                                        type="text"
+                                        class="mt-1 block w-full"
+                                        v-model="form.short_name"
+                                    />
+                                    <InputError class="mt-2" :message="form.errors.short_name" />
+                                </div>
+
+                                <div>
                                     <InputLabel for="email" value="Email" />
                                     <TextInput
                                         id="email"
@@ -103,6 +114,20 @@
                                         </option>
                                     </select>
                                     <InputError class="mt-2" :message="form.errors.client_category_id" />
+                                </div>
+
+                                <div>
+                                    <InputLabel for="client_type" value="Client Type" />
+                                    <select
+                                        id="client_type"
+                                        v-model="form.client_type"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    >
+                                        <option value="government">Government</option>
+                                        <option value="private">Private</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <InputError class="mt-2" :message="form.errors.client_type" />
                                 </div>
                             </div>
 
@@ -177,6 +202,7 @@ const props = defineProps({
 
 const form = useForm({
     name: props.client.name,
+    short_name: props.client.short_name,
     email: props.client.email,
     phone: props.client.phone,
     company: props.client.company,
@@ -184,7 +210,8 @@ const form = useForm({
     status: props.client.status,
     active: props.client.active,
     notes: props.client.notes,
-    client_category_id: props.client.client_category_id
+    client_category_id: props.client.client_category_id,
+    client_type: props.client.client_type || 'private',
 });
 
 function submit() {

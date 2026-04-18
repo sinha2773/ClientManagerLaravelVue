@@ -17,11 +17,13 @@ class ClientController extends Controller
                 return [
                     'id' => $client->id,
                     'name' => $client->name,
+                    'short_name' => $client->short_name,
                     'email' => $client->email,
                     'phone' => $client->phone,
                     'company' => $client->company,
                     'status' => $client->status,
                     'client_category_id' => $client->client_category_id,
+                    'client_type' => $client->client_type,
                     'category' => $client->category,
                     'domains_count' => $client->domains->count(),
                     'hosting_count' => $client->hostingServices->count(),
@@ -48,12 +50,14 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'short_name' => 'nullable|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
+            'client_type' => 'required|in:government,private,other',
         ]);
 
         Client::create($validated);
@@ -89,12 +93,14 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'short_name' => 'nullable|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
+            'client_type' => 'required|in:government,private,other',
         ]);
 
         $client->update($validated);

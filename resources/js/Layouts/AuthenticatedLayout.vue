@@ -14,6 +14,7 @@ const isServicesActive = computed(() => {
     return page.props.route?.current('settings.client-categories.*') ||
            page.props.route?.current('clients.*') ||
            page.props.route?.current('domains.*') ||
+           page.props.route?.current('hosting-services.*') ||
            page.props.route?.current('ssl-certificates.*');
 });
 
@@ -98,6 +99,11 @@ const servicesButtonClasses = computed(() => {
                                                 Domains
                                             </DropdownLink>
                                             <DropdownLink
+                                                :href="route('hosting-services.index')"
+                                            >
+                                                Hosting
+                                            </DropdownLink>
+                                            <DropdownLink
                                                 :href="route('ssl-certificates.index')"
                                             >
                                                 SSL Certificates
@@ -105,13 +111,6 @@ const servicesButtonClasses = computed(() => {
                                         </template>
                                     </Dropdown>
                                 </div>
-
-                                <NavLink
-                                    :href="route('hosting-services.index')"
-                                    :active="route().current('hosting-services.*')"
-                                >
-                                    Hosting
-                                </NavLink>
                                 <NavLink
                                     :href="route('bills.index')"
                                     :active="route().current('bills.*')"

@@ -38,6 +38,10 @@
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
+                                <p class="text-sm text-gray-600">Short Name</p>
+                                <p class="text-base">{{ client.short_name || '-' }}</p>
+                            </div>
+                            <div>
                                 <p class="text-sm text-gray-600">Email</p>
                                 <p class="text-base">{{ client.email }}</p>
                             </div>
@@ -65,6 +69,10 @@
                                 >
                                     {{ client.active ? 'Active' : 'Inactive' }}
                                 </span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Client Type</p>
+                                <p class="text-base capitalize">{{ client.client_type || '-' }}</p>
                             </div>
                         </div>
                     </div>

@@ -26,6 +26,18 @@
                                 <InputError :message="form.errors.name" class="mt-2" />
                             </div>
 
+                            <!-- Short Name -->
+                            <div>
+                                <InputLabel for="short_name" value="Short Name" />
+                                <TextInput
+                                    id="short_name"
+                                    v-model="form.short_name"
+                                    type="text"
+                                    class="mt-1 block w-full"
+                                />
+                                <InputError :message="form.errors.short_name" class="mt-2" />
+                            </div>
+
                             <!-- Email -->
                             <div>
                                 <InputLabel for="email" value="Email" />
@@ -92,6 +104,20 @@
                                 </select>
                                 <InputError :message="form.errors.client_category_id" class="mt-2" />
                             </div>
+
+                            <div>
+                                <InputLabel for="client_type" value="Client Type" />
+                                <select
+                                    id="client_type"
+                                    v-model="form.client_type"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option value="government">Government</option>
+                                    <option value="private">Private</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <InputError :message="form.errors.client_type" class="mt-2" />
+                            </div>
                         </div>
 
                         <!-- Address -->
@@ -139,12 +165,14 @@ const props = defineProps({
 
 const form = useForm({
     name: '',
+    short_name: '',
     email: '',
     phone: '',
     company: '',
     address: '',
     status: 'active',
     client_category_id: null,
+    client_type: 'private',
 });
 
 const submit = () => {
