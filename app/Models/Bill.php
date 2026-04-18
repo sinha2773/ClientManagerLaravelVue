@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Bill extends Model
 {
@@ -118,6 +117,8 @@ class Bill extends Model
      */
     public function updatePaymentStatus(): void
     {
+        $wasNotPaid = $this->payment_status !== 'paid';
+
         if ($this->paid_amount >= $this->amount) {
             $this->payment_status = 'paid';
             $this->paid_date = now();
@@ -127,8 +128,42 @@ class Bill extends Model
             $this->payment_status = 'unpaid';
             $this->paid_date = null;
         }
-        
+
         $this->save();
+
+        if ($wasNotPaid && $this->payment_status === 'paid') {
+            $this->renewService();
+        }
+    }
+
+    public function renewService(): void
+    {
+        if ($this->service_type === 'eims_fee') {
+            return;
+        }
+
+        $service = match ($this->service_type) {
+            'domain' => Domain::find($this->service_id),
+            'hosting' => HostingService::find($this->service_id),
+            'ssl_certificate' => SslCertificate::find($this->service_id),
+            default => null,
+        };
+
+        if (! $service) {
+            return;
+        }
+
+        $dateField = match ($this->service_type) {
+            'domain' => 'expiry_date',
+            'hosting' => 'renewal_date',
+            'ssl_certificate' => 'expiry_date',
+            default => null,
+        };
+
+        if ($dateField) {
+            $service->update([$dateField => $service->$dateField->addYear()]);
+            $service->update(['payment_status' => 'paid']);
+        }
     }
 
     /**
@@ -139,12 +174,12 @@ class Bill extends Model
         $year = date('Y');
         $month = date('m');
         $lastBill = self::whereYear('created_at', $year)
-                       ->whereMonth('created_at', $month)
-                       ->orderBy('id', 'desc')
-                       ->first();
-        
+            ->whereMonth('created_at', $month)
+            ->orderBy('id', 'desc')
+            ->first();
+
         $sequence = $lastBill ? intval(substr($lastBill->bill_number, -4)) + 1 : 1;
-        
+
         return sprintf('BILL-%s%s-%04d', $year, $month, $sequence);
     }
 
@@ -154,9 +189,9 @@ class Bill extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($bill) {
-            if (!$bill->bill_number) {
+            if (! $bill->bill_number) {
                 $bill->bill_number = self::generateBillNumber();
             }
         });
