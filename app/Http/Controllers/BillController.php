@@ -65,7 +65,7 @@ class BillController extends Controller
     /**
      * Show the form for creating a new bill
      */
-    public function create()
+    public function create(Request $request)
     {
         $user = Auth::user();
 
