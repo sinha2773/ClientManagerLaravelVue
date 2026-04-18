@@ -237,9 +237,14 @@ class BillController extends Controller
             'status' => 'sent',
             'approved_by' => $user->id,
             'approved_at' => now(),
+            'paid_amount' => $bill->amount,
+            'payment_status' => 'paid',
+            'paid_date' => now(),
         ]);
 
-        return back()->with('success', 'Bill approved successfully.');
+        $bill->renewService();
+
+        return back()->with('success', 'Bill approved and marked as paid successfully.');
     }
 
     /**
