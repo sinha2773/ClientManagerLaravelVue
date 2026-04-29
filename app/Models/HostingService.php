@@ -14,6 +14,7 @@ class HostingService extends Model
     protected $fillable = [
         'client_id',
         'domain_id',
+        'provider_id',
         'provider',
         'package_name',
         'start_date',
@@ -40,6 +41,11 @@ class HostingService extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function providerRel(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class, 'provider_id');
     }
 
     public function bills(): HasMany

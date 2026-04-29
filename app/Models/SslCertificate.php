@@ -14,6 +14,7 @@ class SslCertificate extends Model
     protected $fillable = [
         'client_id',
         'domain_id',
+        'provider_id',
         'provider',
         'type',
         'issue_date',
@@ -38,6 +39,11 @@ class SslCertificate extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function providerRel(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class, 'provider_id');
     }
 
     public function bills(): HasMany

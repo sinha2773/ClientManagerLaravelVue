@@ -129,6 +129,21 @@
                                     </select>
                                     <InputError class="mt-2" :message="form.errors.client_type" />
                                 </div>
+
+                                <div>
+                                    <InputLabel for="marketing_partner_id" value="Marketing Partner" />
+                                    <select
+                                        id="marketing_partner_id"
+                                        v-model="form.marketing_partner_id"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    >
+                                        <option :value="null">Select Marketing Partner</option>
+                                        <option v-for="partner in marketingPartners" :key="partner.id" :value="partner.id">
+                                            {{ partner.name }}
+                                        </option>
+                                    </select>
+                                    <InputError class="mt-2" :message="form.errors.marketing_partner_id" />
+                                </div>
                             </div>
 
                             <div>
@@ -197,6 +212,10 @@ const props = defineProps({
     categories: {
         type: Array,
         required: true
+    },
+    marketingPartners: {
+        type: Array,
+        required: true
     }
 });
 
@@ -212,6 +231,7 @@ const form = useForm({
     notes: props.client.notes,
     client_category_id: props.client.client_category_id,
     client_type: props.client.client_type || 'private',
+    marketing_partner_id: props.client.marketing_partner_id,
 });
 
 function submit() {

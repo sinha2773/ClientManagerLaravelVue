@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\MarketingPartner;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -66,9 +67,11 @@ class ClientController extends Controller
     public function create()
     {
         $categories = \App\Models\ClientCategory::where('status', 'active')->get();
+        $marketingPartners = MarketingPartner::all();
 
         return Inertia::render('Clients/Create', [
             'categories' => $categories,
+            'marketingPartners' => $marketingPartners,
         ]);
     }
 
@@ -84,6 +87,7 @@ class ClientController extends Controller
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
             'client_type' => 'required|in:government,private,other',
+            'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
         ]);
 
         Client::create($validated);
@@ -108,10 +112,12 @@ class ClientController extends Controller
     public function edit(Client $client)
     {
         $categories = \App\Models\ClientCategory::where('status', 'active')->get();
+        $marketingPartners = MarketingPartner::all();
 
         return Inertia::render('Clients/Edit', [
             'client' => $client,
             'categories' => $categories,
+            'marketingPartners' => $marketingPartners,
         ]);
     }
 
@@ -127,6 +133,7 @@ class ClientController extends Controller
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
             'client_type' => 'required|in:government,private,other',
+            'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
         ]);
 
         $client->update($validated);

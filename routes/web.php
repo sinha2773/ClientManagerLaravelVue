@@ -7,8 +7,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DomainController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HostingServiceController;
+use App\Http\Controllers\MarketingPartnerController;
 use App\Http\Controllers\PaySalaryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\SslCertificateController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +92,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/{clientCategory}/edit', [ClientCategoryController::class, 'edit'])->name('edit');
             Route::put('/{clientCategory}', [ClientCategoryController::class, 'update'])->name('update');
             Route::delete('/{clientCategory}', [ClientCategoryController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('marketing-partners')->name('marketing-partners.')->group(function () {
+            Route::get('/', [MarketingPartnerController::class, 'index'])->name('index');
+            Route::get('/create', [MarketingPartnerController::class, 'create'])->name('create');
+            Route::post('/', [MarketingPartnerController::class, 'store'])->name('store');
+            Route::get('/{marketingPartner}/edit', [MarketingPartnerController::class, 'edit'])->name('edit');
+            Route::put('/{marketingPartner}', [MarketingPartnerController::class, 'update'])->name('update');
+            Route::delete('/{marketingPartner}', [MarketingPartnerController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('providers')->name('providers.')->group(function () {
+            Route::get('/', [ProviderController::class, 'index'])->name('index');
+            Route::get('/create', [ProviderController::class, 'create'])->name('create');
+            Route::post('/', [ProviderController::class, 'store'])->name('store');
+            Route::get('/{provider}/edit', [ProviderController::class, 'edit'])->name('edit');
+            Route::put('/{provider}', [ProviderController::class, 'update'])->name('update');
+            Route::delete('/{provider}', [ProviderController::class, 'destroy'])->name('destroy');
         });
     });
 

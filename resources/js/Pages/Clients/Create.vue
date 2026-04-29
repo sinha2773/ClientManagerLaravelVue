@@ -118,6 +118,21 @@
                                 </select>
                                 <InputError :message="form.errors.client_type" class="mt-2" />
                             </div>
+
+                            <div>
+                                <InputLabel for="marketing_partner_id" value="Marketing Partner" />
+                                <select
+                                    id="marketing_partner_id"
+                                    v-model="form.marketing_partner_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option :value="null">Select Marketing Partner</option>
+                                    <option v-for="partner in marketingPartners" :key="partner.id" :value="partner.id">
+                                        {{ partner.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.marketing_partner_id" class="mt-2" />
+                            </div>
                         </div>
 
                         <!-- Address -->
@@ -161,6 +176,7 @@ import { ref } from 'vue';
 
 const props = defineProps({
     categories: Array,
+    marketingPartners: Array,
 });
 
 const form = useForm({
@@ -173,6 +189,7 @@ const form = useForm({
     status: 'active',
     client_category_id: null,
     client_type: 'private',
+    marketing_partner_id: null,
 });
 
 const submit = () => {

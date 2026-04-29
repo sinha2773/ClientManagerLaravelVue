@@ -36,15 +36,22 @@
 
                             <!-- Provider -->
                             <div>
-                                <InputLabel for="provider" value="Provider" />
-                                <TextInput
-                                    id="provider"
-                                    v-model="form.provider"
-                                    type="text"
-                                    class="mt-1 block w-full"
-                                    required
-                                />
-                                <InputError :message="form.errors.provider" class="mt-2" />
+                                <InputLabel for="provider_id" value="Provider" />
+                                <select
+                                    id="provider_id"
+                                    v-model="form.provider_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option :value="null">Select a provider</option>
+                                    <option
+                                        v-for="provider in providers"
+                                        :key="provider.id"
+                                        :value="provider.id"
+                                    >
+                                        {{ provider.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.provider_id" class="mt-2" />
                             </div>
 
                             <!-- Type -->
@@ -175,11 +182,13 @@ import TextInput from '@/Components/TextInput.vue';
 const props = defineProps({
     sslCertificate: Object,
     domains: Array,
+    providers: Array,
 });
 
 const form = useForm({
     domain_id: props.sslCertificate.domain_id,
     provider: props.sslCertificate.provider,
+    provider_id: props.sslCertificate.provider_id,
     type: props.sslCertificate.type,
     issue_date: props.sslCertificate.issue_date,
     expiry_date: props.sslCertificate.expiry_date,

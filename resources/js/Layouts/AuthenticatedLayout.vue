@@ -12,6 +12,8 @@ const page = usePage();
 
 const isServicesActive = computed(() => {
     return page.props.route?.current('settings.client-categories.*') ||
+           page.props.route?.current('settings.marketing-partners.*') ||
+           page.props.route?.current('settings.providers.*') ||
            page.props.route?.current('clients.*') ||
            page.props.route?.current('domains.*') ||
            page.props.route?.current('hosting-services.*') ||
@@ -87,6 +89,16 @@ const servicesButtonClasses = computed(() => {
                                                 :href="route('settings.client-categories.index')"
                                             >
                                                 Client Categories
+                                            </DropdownLink>
+                                            <DropdownLink
+                                                :href="route('settings.marketing-partners.index')"
+                                            >
+                                                Marketing Partner
+                                            </DropdownLink>
+                                            <DropdownLink
+                                                :href="route('settings.providers.index')"
+                                            >
+                                                Provider
                                             </DropdownLink>
                                             <DropdownLink
                                                 :href="route('clients.index')"
@@ -251,9 +263,21 @@ const servicesButtonClasses = computed(() => {
                             <div class="mt-1 space-y-1">
                                 <ResponsiveNavLink
                                     :href="route('settings.client-categories.index')"
-                                    :active="route().current('settings.*')"
+                                    :active="route().current('settings.client-categories.*')"
                                 >
                                     Client Categories
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    :href="route('settings.marketing-partners.index')"
+                                    :active="route().current('settings.marketing-partners.*')"
+                                >
+                                    Marketing Partner
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    :href="route('settings.providers.index')"
+                                    :active="route().current('settings.providers.*')"
+                                >
+                                    Provider
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     :href="route('clients.index')"

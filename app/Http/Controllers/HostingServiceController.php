@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Domain;
 use App\Models\HostingService;
+use App\Models\Provider;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,7 @@ class HostingServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = HostingService::with(['domain', 'client']);
+        $query = HostingService::with(['domain', 'client', 'providerRel']);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -39,8 +40,8 @@ class HostingServiceController extends Controller
             $query->where('domain_id', $request->input('domain_id'));
         }
 
-        if ($request->filled('provider')) {
-            $query->where('provider', $request->input('provider'));
+        if ($request->filled('provider_id')) {
+            $query->where('provider_id', $request->input('provider_id'));
         }
 
         $hostingServices = $query->latest()
@@ -56,6 +57,8 @@ class HostingServiceController extends Controller
                     ],
                     'client_id' => $service->client_id,
                     'provider' => $service->provider,
+                    'provider_id' => $service->provider_id,
+                    'providerRel' => $service->providerRel ? ['id' => $service->providerRel->id, 'name' => $service->providerRel->name] : null,
                     'package_name' => $service->package_name,
                     'renewal_date' => $service->renewal_date->format('Y-m-d'),
                     'status' => $service->status,
@@ -68,10 +71,10 @@ class HostingServiceController extends Controller
 
         return Inertia::render('HostingServices/Index', [
             'hostingServices' => $hostingServices,
-            'filters' => $request->only(['search', 'status', 'payment_status', 'client_id', 'domain_id', 'provider']),
+            'filters' => $request->only(['search', 'status', 'payment_status', 'client_id', 'domain_id', 'provider_id']),
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
-            'providers' => HostingService::select('provider')->distinct()->orderBy('provider')->pluck('provider'),
+            'providers' => Provider::orderBy('name')->get(),
         ]);
     }
 
@@ -79,6 +82,7 @@ class HostingServiceController extends Controller
     {
         return Inertia::render('HostingServices/Create', [
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
+            'providers' => Provider::orderBy('name')->get(),
         ]);
     }
 
@@ -86,7 +90,8 @@ class HostingServiceController extends Controller
     {
         $validated = $request->validate([
             'domain_id' => 'required|exists:domains,id',
-            'provider' => 'required|string|max:255',
+            'provider' => 'nullable|string|max:255',
+            'provider_id' => 'nullable|exists:providers,id',
             'package_name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'renewal_date' => 'required|date',
@@ -99,9 +104,12 @@ class HostingServiceController extends Controller
             'password' => 'required|string|max:255',
         ]);
 
-        // Get the domain and its associated client_id
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
+
+        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+            $validated['provider'] = Provider::find($validated['provider_id'])->name;
+        }
 
         HostingService::create($validated);
 
@@ -116,6 +124,7 @@ class HostingServiceController extends Controller
                 'id' => $hostingService->id,
                 'domain_id' => $hostingService->domain_id,
                 'provider' => $hostingService->provider,
+                'provider_id' => $hostingService->provider_id,
                 'package_name' => $hostingService->package_name,
                 'start_date' => $hostingService->start_date->format('Y-m-d'),
                 'renewal_date' => $hostingService->renewal_date->format('Y-m-d'),
@@ -128,6 +137,7 @@ class HostingServiceController extends Controller
                 'control_panel_url' => $hostingService->control_panel_url,
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
+            'providers' => Provider::orderBy('name')->get(),
         ]);
     }
 
@@ -135,7 +145,8 @@ class HostingServiceController extends Controller
     {
         $validated = $request->validate([
             'domain_id' => 'required|exists:domains,id',
-            'provider' => 'required|string|max:255',
+            'provider' => 'nullable|string|max:255',
+            'provider_id' => 'nullable|exists:providers,id',
             'package_name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'renewal_date' => 'required|date',
@@ -148,9 +159,12 @@ class HostingServiceController extends Controller
             'password' => 'required|string|max:255',
         ]);
 
-        // Get the domain and its associated client_id
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
+
+        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+            $validated['provider'] = Provider::find($validated['provider_id'])->name;
+        }
 
         $hostingService->update($validated);
 

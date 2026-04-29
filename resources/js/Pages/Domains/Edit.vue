@@ -60,6 +60,26 @@
                                 <InputError :message="form.errors.registrar" class="mt-2" />
                             </div>
 
+                            <!-- Provider -->
+                            <div>
+                                <InputLabel for="provider_id" value="Provider" />
+                                <select
+                                    id="provider_id"
+                                    v-model="form.provider_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option :value="null">Select a provider</option>
+                                    <option
+                                        v-for="provider in providers"
+                                        :key="provider.id"
+                                        :value="provider.id"
+                                    >
+                                        {{ provider.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.provider_id" class="mt-2" />
+                            </div>
+
                             <!-- Registration Date -->
                             <div>
                                 <InputLabel for="registration_date" value="Registration Date" />
@@ -173,11 +193,13 @@ import { ref } from 'vue';
 const props = defineProps({
     domain: Object,
     clients: Array,
+    providers: Array,
 });
 
 const form = useForm({
     client_id: props.domain.client_id,
     name: props.domain.name,
+    provider_id: props.domain.provider_id,
     registrar: props.domain.registrar,
     registration_date: props.domain.registration_date,
     expiry_date: props.domain.expiry_date,

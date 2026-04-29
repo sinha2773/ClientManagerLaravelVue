@@ -15,6 +15,7 @@ class Domain extends Model
     protected $fillable = [
         'client_id',
         'name',
+        'provider_id',
         'registrar',
         'registration_date',
         'expiry_date',
@@ -33,6 +34,11 @@ class Domain extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class);
     }
 
     public function sslCertificate(): HasOne

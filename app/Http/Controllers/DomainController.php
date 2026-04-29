@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Domain;
+use App\Models\Provider;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -11,7 +12,7 @@ class DomainController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Domain::with(['client', 'hostingService', 'sslCertificate']);
+        $query = Domain::with(['client', 'hostingService', 'sslCertificate', 'provider']);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -50,6 +51,8 @@ class DomainController extends Controller
                         'name' => $domain->client->name,
                     ],
                     'client_id' => $domain->client_id,
+                    'provider_id' => $domain->provider_id,
+                    'providerData' => $domain->provider ? ['id' => $domain->provider->id, 'name' => $domain->provider->name] : null,
                     'registrar' => $domain->registrar,
                     'registration_date' => $domain->registration_date->format('Y-m-d'),
                     'expiry_date' => $domain->expiry_date->format('Y-m-d'),
@@ -77,6 +80,7 @@ class DomainController extends Controller
     {
         return Inertia::render('Domains/Create', [
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
+            'providers' => Provider::orderBy('name')->get(),
         ]);
     }
 
@@ -85,6 +89,7 @@ class DomainController extends Controller
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'name' => 'required|string|max:255',
+            'provider_id' => 'nullable|exists:providers,id',
             'registrar' => 'required|string|max:255',
             'registration_date' => 'required|date',
             'expiry_date' => 'required|date|after:registration_date',
@@ -114,6 +119,7 @@ class DomainController extends Controller
         return Inertia::render('Domains/Edit', [
             'domain' => $domain,
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
+            'providers' => Provider::orderBy('name')->get(),
         ]);
     }
 
@@ -122,6 +128,7 @@ class DomainController extends Controller
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'name' => 'required|string|max:255',
+            'provider_id' => 'nullable|exists:providers,id',
             'registrar' => 'required|string|max:255',
             'registration_date' => 'required|date',
             'expiry_date' => 'required|date|after:registration_date',

@@ -67,13 +67,13 @@
                             </div>
                             <div>
                                 <select
-                                    v-model="filterForm.provider"
+                                    v-model="filterForm.provider_id"
                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     @change="applyFilters"
                                 >
                                     <option value="">All Providers</option>
-                                    <option v-for="provider in providers" :key="provider" :value="provider">
-                                        {{ provider }}
+                                    <option v-for="provider in providers" :key="provider.id" :value="provider.id">
+                                        {{ provider.name }}
                                     </option>
                                 </select>
                             </div>
@@ -125,7 +125,7 @@
                                             </Link>
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
-                                            {{ service.provider }}
+                                            {{ service.providerRel ? service.providerRel.name : service.provider }}
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4">
                                             {{ service.package_name }}
@@ -208,7 +208,7 @@ const filterForm = ref({
     status: props.filters?.status || '',
     payment_status: props.filters?.payment_status || '',
     client_id: props.filters?.client_id || '',
-    provider: props.filters?.provider || '',
+    provider_id: props.filters?.provider_id || '',
 });
 
 let debounceTimer = null;
@@ -224,7 +224,7 @@ const applyFilters = () => {
 };
 
 const resetFilters = () => {
-    filterForm.value = { search: '', status: '', payment_status: '', client_id: '', provider: '' };
+    filterForm.value = { search: '', status: '', payment_status: '', client_id: '', provider_id: '' };
     router.get(route('hosting-services.index'), {}, { preserveState: true, preserveScroll: true });
 };
 

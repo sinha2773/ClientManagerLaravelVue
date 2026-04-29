@@ -21,11 +21,17 @@ class Client extends Model
         'status',
         'client_category_id',
         'client_type',
+        'marketing_partner_id',
     ];
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(ClientCategory::class, 'client_category_id');
+    }
+
+    public function marketingPartner(): BelongsTo
+    {
+        return $this->belongsTo(MarketingPartner::class);
     }
 
     public function domains(): HasMany
