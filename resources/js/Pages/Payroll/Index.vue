@@ -26,6 +26,83 @@
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+                            <div>
+                                <input
+                                    type="text"
+                                    v-model="filterForm.search"
+                                    placeholder="Search employee..."
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @input="applyFilters"
+                                />
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.employee_id"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Employees</option>
+                                    <option v-for="employee in employees" :key="employee.id" :value="employee.id">
+                                        {{ employee.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.salary_source"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Sources</option>
+                                    <option value="CodeGaon">CodeGaon</option>
+                                    <option value="MSBJBD">MSBJBD</option>
+                                    <option value="SinhdBD">SinhdBD</option>
+                                </select>
+                            </div>
+                            <div>
+                                <input
+                                    type="month"
+                                    v-model="filterForm.month_year"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                />
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.is_paid"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Payment</option>
+                                    <option value="1">Paid</option>
+                                    <option value="0">Unpaid</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.is_due"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Due Status</option>
+                                    <option value="1">Due</option>
+                                    <option value="0">Not Due</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button
+                                    @click="resetFilters"
+                                    class="block w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                                >
+                                    Reset Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <div class="overflow-x-auto">
@@ -204,7 +281,34 @@ import { ref } from 'vue';
 const props = defineProps({
     paySalaries: Array,
     employees: Array,
+    filters: Object,
 });
+
+const filterForm = ref({
+    search: props.filters?.search || '',
+    employee_id: props.filters?.employee_id || '',
+    salary_source: props.filters?.salary_source || '',
+    month_year: props.filters?.month_year || '',
+    is_paid: props.filters?.is_paid || '',
+    is_due: props.filters?.is_due || '',
+});
+
+let debounceTimer = null;
+const applyFilters = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        const params = {};
+        for (const [key, value] of Object.entries(filterForm.value)) {
+            if (value !== '' && value !== null && value !== undefined) params[key] = value;
+        }
+        router.get(route('payroll.index'), params, { preserveState: true, preserveScroll: true });
+    }, 300);
+};
+
+const resetFilters = () => {
+    filterForm.value = { search: '', employee_id: '', salary_source: '', month_year: '', is_paid: '', is_due: '' };
+    router.get(route('payroll.index'), {}, { preserveState: true, preserveScroll: true });
+};
 
 const showModal = ref(false);
 const editMode = ref(false);

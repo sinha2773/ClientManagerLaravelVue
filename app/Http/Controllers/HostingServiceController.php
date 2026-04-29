@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Domain;
 use App\Models\HostingService;
 use Illuminate\Http\Request;
@@ -9,10 +10,40 @@ use Inertia\Inertia;
 
 class HostingServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $hostingServices = HostingService::with('domain')
-            ->latest()
+        $query = HostingService::with(['domain', 'client']);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('provider', 'like', "%{$search}%")
+                    ->orWhere('package_name', 'like', "%{$search}%")
+                    ->orWhere('server_ip', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->input('payment_status'));
+        }
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->input('client_id'));
+        }
+
+        if ($request->filled('domain_id')) {
+            $query->where('domain_id', $request->input('domain_id'));
+        }
+
+        if ($request->filled('provider')) {
+            $query->where('provider', $request->input('provider'));
+        }
+
+        $hostingServices = $query->latest()
             ->get()
             ->map(function ($service) {
                 $daysUntilExpiry = (int) now()->diffInDays($service->renewal_date, false);
@@ -29,6 +60,7 @@ class HostingServiceController extends Controller
                     'renewal_date' => $service->renewal_date->format('Y-m-d'),
                     'status' => $service->status,
                     'price' => $service->price,
+                    'payment_status' => $service->payment_status,
                     'is_expired' => $daysUntilExpiry < 0,
                     'days_until_expiry' => $daysUntilExpiry,
                 ];
@@ -36,6 +68,10 @@ class HostingServiceController extends Controller
 
         return Inertia::render('HostingServices/Index', [
             'hostingServices' => $hostingServices,
+            'filters' => $request->only(['search', 'status', 'payment_status', 'client_id', 'domain_id', 'provider']),
+            'clients' => Client::select('id', 'name')->orderBy('name')->get(),
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
+            'providers' => HostingService::select('provider')->distinct()->orderBy('provider')->pluck('provider'),
         ]);
     }
 

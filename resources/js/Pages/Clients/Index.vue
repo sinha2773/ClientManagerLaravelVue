@@ -18,6 +18,64 @@
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                            <div>
+                                <input
+                                    type="text"
+                                    v-model="filterForm.search"
+                                    placeholder="Search name, email, phone..."
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @input="applyFilters"
+                                />
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.status"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.client_type"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Types</option>
+                                    <option value="government">Government</option>
+                                    <option value="private">Private</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.client_category_id"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Categories</option>
+                                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                                        {{ category.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <button
+                                    @click="resetFilters"
+                                    class="block w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                                >
+                                    Reset Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <div class="overflow-x-auto">
@@ -109,13 +167,38 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     clients: Array,
+    filters: Object,
+    categories: Array,
 });
+
+const filterForm = ref({
+    search: props.filters?.search || '',
+    status: props.filters?.status || '',
+    client_type: props.filters?.client_type || '',
+    client_category_id: props.filters?.client_category_id || '',
+});
+
+let debounceTimer = null;
+const applyFilters = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        const params = {};
+        for (const [key, value] of Object.entries(filterForm.value)) {
+            if (value) params[key] = value;
+        }
+        router.get(route('clients.index'), params, { preserveState: true, preserveScroll: true });
+    }, 300);
+};
+
+const resetFilters = () => {
+    filterForm.value = { search: '', status: '', client_type: '', client_category_id: '' };
+    router.get(route('clients.index'), {}, { preserveState: true, preserveScroll: true });
+};
 
 const deleteClient = (id) => {
     if (confirm('Are you sure you want to delete this client?')) {

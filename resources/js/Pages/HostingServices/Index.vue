@@ -18,6 +18,76 @@
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                            <div>
+                                <input
+                                    type="text"
+                                    v-model="filterForm.search"
+                                    placeholder="Search provider, package, IP..."
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @input="applyFilters"
+                                />
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.status"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.payment_status"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Payment Statuses</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="unpaid">Unpaid</option>
+                                    <option value="partially_paid">Partially Paid</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.client_id"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Clients</option>
+                                    <option v-for="client in clients" :key="client.id" :value="client.id">
+                                        {{ client.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <select
+                                    v-model="filterForm.provider"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Providers</option>
+                                    <option v-for="provider in providers" :key="provider" :value="provider">
+                                        {{ provider }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <button
+                                    @click="resetFilters"
+                                    class="block w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                                >
+                                    Reset Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <div class="overflow-x-auto">
@@ -122,12 +192,41 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
-import { router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps({
     hostingServices: Array,
+    filters: Object,
+    clients: Array,
+    domains: Array,
+    providers: Array,
 });
+
+const filterForm = ref({
+    search: props.filters?.search || '',
+    status: props.filters?.status || '',
+    payment_status: props.filters?.payment_status || '',
+    client_id: props.filters?.client_id || '',
+    provider: props.filters?.provider || '',
+});
+
+let debounceTimer = null;
+const applyFilters = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        const params = {};
+        for (const [key, value] of Object.entries(filterForm.value)) {
+            if (value) params[key] = value;
+        }
+        router.get(route('hosting-services.index'), params, { preserveState: true, preserveScroll: true });
+    }, 300);
+};
+
+const resetFilters = () => {
+    filterForm.value = { search: '', status: '', payment_status: '', client_id: '', provider: '' };
+    router.get(route('hosting-services.index'), {}, { preserveState: true, preserveScroll: true });
+};
 
 const deleteHostingService = (id) => {
     if (confirm('Are you sure you want to delete this hosting service?')) {

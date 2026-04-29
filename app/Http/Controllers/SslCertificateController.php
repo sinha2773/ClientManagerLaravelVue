@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Domain;
 use App\Models\SslCertificate;
 use Illuminate\Http\Request;
@@ -9,10 +10,43 @@ use Inertia\Inertia;
 
 class SslCertificateController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sslCertificates = SslCertificate::with('domain')
-            ->latest()
+        $query = SslCertificate::with(['domain', 'client']);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('provider', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->input('payment_status'));
+        }
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->input('client_id'));
+        }
+
+        if ($request->filled('domain_id')) {
+            $query->where('domain_id', $request->input('domain_id'));
+        }
+
+        if ($request->filled('provider')) {
+            $query->where('provider', $request->input('provider'));
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        $sslCertificates = $query->latest()
             ->get()
             ->map(function ($certificate) {
                 $daysUntilExpiry = (int) now()->diffInDays($certificate->expiry_date, false);
@@ -39,6 +73,11 @@ class SslCertificateController extends Controller
 
         return Inertia::render('SslCertificates/Index', [
             'sslCertificates' => $sslCertificates,
+            'filters' => $request->only(['search', 'status', 'payment_status', 'client_id', 'domain_id', 'provider', 'type']),
+            'clients' => Client::select('id', 'name')->orderBy('name')->get(),
+            'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
+            'providers' => SslCertificate::select('provider')->distinct()->orderBy('provider')->pluck('provider'),
+            'types' => SslCertificate::select('type')->distinct()->orderBy('type')->pluck('type'),
         ]);
     }
 

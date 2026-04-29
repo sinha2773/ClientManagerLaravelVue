@@ -8,10 +8,34 @@ use Inertia\Inertia;
 
 class ClientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::with(['domains', 'hostingServices', 'sslCertificates', 'category'])
-            ->latest()
+        $query = Client::with(['domains', 'hostingServices', 'sslCertificates', 'category']);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('company', 'like', "%{$search}%")
+                    ->orWhere('short_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('client_type')) {
+            $query->where('client_type', $request->input('client_type'));
+        }
+
+        if ($request->filled('client_category_id')) {
+            $query->where('client_category_id', $request->input('client_category_id'));
+        }
+
+        $clients = $query->latest()
             ->get()
             ->map(function ($client) {
                 return [
@@ -34,6 +58,8 @@ class ClientController extends Controller
 
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
+            'filters' => $request->only(['search', 'status', 'client_type', 'client_category_id']),
+            'categories' => \App\Models\ClientCategory::where('status', 'active')->get(),
         ]);
     }
 

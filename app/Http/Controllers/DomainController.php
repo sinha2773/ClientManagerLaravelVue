@@ -9,10 +9,35 @@ use Inertia\Inertia;
 
 class DomainController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $domains = Domain::with(['client', 'hostingService', 'sslCertificate'])
-            ->latest()
+        $query = Domain::with(['client', 'hostingService', 'sslCertificate']);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('registrar', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->input('payment_status'));
+        }
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->input('client_id'));
+        }
+
+        if ($request->filled('registrar')) {
+            $query->where('registrar', $request->input('registrar'));
+        }
+
+        $domains = $query->latest()
             ->get()
             ->map(function ($domain) {
                 $daysUntilExpiry = (int) now()->diffInDays($domain->expiry_date, false);
@@ -42,6 +67,9 @@ class DomainController extends Controller
 
         return Inertia::render('Domains/Index', [
             'domains' => $domains,
+            'filters' => $request->only(['search', 'status', 'payment_status', 'client_id', 'registrar']),
+            'clients' => Client::select('id', 'name')->orderBy('name')->get(),
+            'registrars' => Domain::select('registrar')->distinct()->orderBy('registrar')->pluck('registrar'),
         ]);
     }
 

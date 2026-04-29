@@ -10,17 +10,54 @@ use Illuminate\Support\Facades\DB;
 
 class PaySalaryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $paySalaries = PaySalary::with('employee')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
+        $query = PaySalary::with('employee');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('employee', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('designation', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->input('employee_id'));
+        }
+
+        if ($request->filled('salary_source')) {
+            $query->where('salary_source', $request->input('salary_source'));
+        }
+
+        if ($request->filled('month_year')) {
+            $query->where('month_year', $request->input('month_year'));
+        }
+
+        if ($request->filled('is_paid')) {
+            $query->where('is_paid', filter_var($request->input('is_paid'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($request->filled('is_partial')) {
+            $query->where('is_partial', filter_var($request->input('is_partial'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($request->filled('is_due')) {
+            $query->where('is_due', filter_var($request->input('is_due'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($request->filled('is_advance')) {
+            $query->where('is_advance', filter_var($request->input('is_advance'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $paySalaries = $query->orderBy('created_at', 'desc')->get();
+
         $employees = Employee::all();
-        
+
         return Inertia::render('Payroll/Index', [
             'paySalaries' => $paySalaries,
-            'employees' => $employees
+            'employees' => $employees,
+            'filters' => $request->only(['search', 'employee_id', 'salary_source', 'month_year', 'is_paid', 'is_partial', 'is_due', 'is_advance']),
         ]);
     }
 
