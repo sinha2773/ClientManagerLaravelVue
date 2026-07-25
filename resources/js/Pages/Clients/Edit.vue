@@ -144,6 +144,19 @@
                                     </select>
                                     <InputError class="mt-2" :message="form.errors.marketing_partner_id" />
                                 </div>
+
+                                <div>
+                                    <InputLabel for="eims_monthly" value="Monthly Student Fee" />
+                                    <TextInput
+                                        id="eims_monthly"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 block w-full"
+                                        v-model="form.eims_monthly"
+                                    />
+                                    <InputError class="mt-2" :message="form.errors.eims_monthly" />
+                                </div>
                             </div>
 
                             <div>
@@ -232,6 +245,7 @@ const form = useForm({
     client_category_id: props.client.client_category_id,
     client_type: props.client.client_type || 'private',
     marketing_partner_id: props.client.marketing_partner_id,
+    eims_monthly: props.client.eims_monthly ?? '',
 });
 
 function submit() {

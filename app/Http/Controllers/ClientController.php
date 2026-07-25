@@ -49,6 +49,7 @@ class ClientController extends Controller
                     'status' => $client->status,
                     'client_category_id' => $client->client_category_id,
                     'client_type' => $client->client_type,
+                    'eims_monthly' => $client->eims_monthly,
                     'category' => $client->category,
                     'domains_count' => $client->domains->count(),
                     'hosting_count' => $client->hostingServices->count(),
@@ -88,6 +89,7 @@ class ClientController extends Controller
             'client_category_id' => 'nullable|exists:client_categories,id',
             'client_type' => 'required|in:government,private,other',
             'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
+            'eims_monthly' => 'nullable|numeric|min:0|max:99999999.99',
         ]);
 
         Client::create($validated);
@@ -134,6 +136,7 @@ class ClientController extends Controller
             'client_category_id' => 'nullable|exists:client_categories,id',
             'client_type' => 'required|in:government,private,other',
             'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
+            'eims_monthly' => 'nullable|numeric|min:0|max:99999999.99',
         ]);
 
         $client->update($validated);

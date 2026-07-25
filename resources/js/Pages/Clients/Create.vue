@@ -133,6 +133,19 @@
                                 </select>
                                 <InputError :message="form.errors.marketing_partner_id" class="mt-2" />
                             </div>
+
+                            <div>
+                                <InputLabel for="eims_monthly" value="Monthly Student Fee" />
+                                <TextInput
+                                    id="eims_monthly"
+                                    v-model="form.eims_monthly"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="mt-1 block w-full"
+                                />
+                                <InputError :message="form.errors.eims_monthly" class="mt-2" />
+                            </div>
                         </div>
 
                         <!-- Address -->
@@ -190,6 +203,7 @@ const form = useForm({
     client_category_id: null,
     client_type: 'private',
     marketing_partner_id: null,
+    eims_monthly: '',
 });
 
 const submit = () => {

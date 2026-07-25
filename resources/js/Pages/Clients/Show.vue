@@ -74,6 +74,10 @@
                                 <p class="text-sm text-gray-600">Client Type</p>
                                 <p class="text-base capitalize">{{ client.client_type || '-' }}</p>
                             </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Monthly Student Fee</p>
+                                <p class="text-base">{{ formatCurrency(client.eims_monthly) }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -344,6 +348,14 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+function formatCurrency(value) {
+    if (value === null || value === undefined || value === '') {
+        return '-';
+    }
+
+    return Number(value).toFixed(2);
+}
 
 const props = defineProps({
     client: {

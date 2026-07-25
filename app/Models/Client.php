@@ -22,6 +22,7 @@ class Client extends Model
         'client_category_id',
         'client_type',
         'marketing_partner_id',
+        'eims_monthly',
     ];
 
     public function category(): BelongsTo
