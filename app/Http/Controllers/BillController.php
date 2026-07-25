@@ -9,6 +9,7 @@ use App\Models\HostingService;
 use App\Models\SslCertificate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class BillController extends Controller
@@ -73,8 +74,8 @@ class BillController extends Controller
             abort(403, 'Unauthorized to create bills.');
         }
 
-        $clients = Client::select('id', 'name', 'email')->get();
-        $domains = Domain::with('client')->select('id', 'name', 'client_id', 'price')->get();
+        $clients = Client::select('id', 'name', 'email', 'eims_monthly')->get();
+        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price')->get();
         $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
         $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
 
@@ -130,9 +131,11 @@ class BillController extends Controller
 
         $bill->load(['client', 'creator', 'approver']);
 
-        // Get the related service details (not applicable for EIMS Fee)
+        // Get the related service details
         $service = null;
-        if ($bill->service_type !== 'eims_fee') {
+        if ($bill->service_type === 'eims_fee' && $bill->service_id) {
+            $service = Domain::find($bill->service_id);
+        } elseif ($bill->service_type !== 'eims_fee') {
             switch ($bill->service_type) {
                 case 'domain':
                     $service = Domain::find($bill->service_id);
@@ -165,8 +168,8 @@ class BillController extends Controller
             abort(403, 'Unauthorized to edit this bill.');
         }
 
-        $clients = Client::select('id', 'name', 'email')->get();
-        $domains = Domain::with('client')->select('id', 'name', 'client_id', 'price')->get();
+        $clients = Client::select('id', 'name', 'email', 'eims_monthly')->get();
+        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price')->get();
         $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
         $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
 
@@ -273,6 +276,55 @@ class BillController extends Controller
         return back()->with('success', 'Payment status updated successfully.');
     }
 
+    public function fetchStudentSummary(Request $request)
+    {
+        $user = Auth::user();
+
+        if (! $user->canManageBills()) {
+            abort(403, 'Unauthorized to fetch student summaries.');
+        }
+
+        $validated = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'domain_id' => 'required|exists:domains,id',
+            'year' => 'required|digits:4',
+        ]);
+
+        $domain = Domain::where('id', $validated['domain_id'])
+            ->where('client_id', $validated['client_id'])
+            ->firstOrFail();
+
+        $baseUrl = $this->buildStudentManagementBaseUrl($domain->name);
+        $response = Http::timeout(20)
+            ->acceptJson()
+            ->get($baseUrl.'/api/ClntManApi.php', [
+                'action' => 'getTotalStudent',
+                'api_token' => config('services.client_management.api_token'),
+                'year' => $validated['year'],
+            ]);
+
+        if (! $response->successful()) {
+            return response()->json([
+                'message' => 'Unable to fetch student summary from the selected domain.',
+            ], 422);
+        }
+
+        $payload = $response->json();
+
+        if (($payload['code'] ?? null) !== 200 || (int) ($payload['status'] ?? 0) !== 1) {
+            return response()->json([
+                'message' => $payload['message'] ?? 'Student summary request failed.',
+            ], 422);
+        }
+
+        return response()->json([
+            'year' => data_get($payload, 'data.year', $validated['year']),
+            'grand_totals' => data_get($payload, 'data.grand_totals', []),
+            'summary' => data_get($payload, 'data.summary', []),
+            'message' => $payload['message'] ?? 'Student summary fetched successfully.',
+        ]);
+    }
+
     /**
      * Validate that the service exists and belongs to the client
      */
@@ -317,12 +369,46 @@ class BillController extends Controller
         if ($request->service_type !== 'eims_fee') {
             $rules['service_id'] = 'required|integer';
         } else {
-            $rules['service_id'] = 'nullable|integer';
+            $rules['service_id'] = 'required|integer|exists:domains,id';
             $rules['total_students'] = 'required|integer|min:1';
+            $rules['eims_monthly'] = 'required|numeric|min:0|max:99999999.99';
+            $rules['discount'] = 'nullable|numeric|min:0|max:99999999.99';
             $rules['billing_months'] = 'required|array|min:1';
             $rules['billing_months.*'] = 'required|string|date_format:Y-m';
+            $rules['student_summary_year'] = 'nullable|digits:4';
+            $rules['student_grand_totals'] = 'nullable|array';
+            $rules['student_summary'] = 'nullable|array';
         }
 
-        return $request->validate($rules);
+        $validated = $request->validate($rules);
+
+        if (($validated['service_type'] ?? null) === 'eims_fee') {
+            $this->validateService('domain', (int) $validated['service_id'], (int) $validated['client_id']);
+            $validated['discount'] = $validated['discount'] ?? 0;
+        }
+
+        return $validated;
+    }
+
+    private function buildStudentManagementBaseUrl(string $domainName): string
+    {
+        $domainName = trim($domainName);
+        $hasScheme = preg_match('/^https?:\/\//i', $domainName);
+        $localHosts = ['localhost', '127.0.0.1', '0.0.0.0'];
+        $rawHost = strtolower(parse_url($hasScheme ? $domainName : 'http://'.$domainName, PHP_URL_HOST) ?? '');
+        $scheme = in_array($rawHost, $localHosts, true) ? 'http://' : 'https://';
+        $baseUrl = $hasScheme ? $domainName : $scheme.$domainName;
+        $parts = parse_url($baseUrl);
+
+        if (! $parts || empty($parts['host'])) {
+            abort(422, 'The selected domain is not a valid URL host.');
+        }
+
+        $host = strtolower($parts['host']);
+        if (in_array($host, $localHosts, true) && ! app()->environment(['local', 'development', 'testing'])) {
+            abort(422, 'Local domains cannot be used for student summary fetching.');
+        }
+
+        return rtrim(($parts['scheme'] ?? 'https').'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : ''), '/');
     }
 }

@@ -53,7 +53,7 @@
                         </div>
 
                         <!-- Service Selection -->
-                        <div v-if="form.service_type && availableServices.length > 0">
+                        <div v-if="form.service_type && form.service_type !== 'eims_fee' && availableServices.length > 0">
                             <InputLabel for="service_id" value="Service" />
                             <select
                                 id="service_id"
@@ -70,7 +70,7 @@
                             <InputError :message="form.errors.service_id" class="mt-2" />
                         </div>
 
-                        <div v-else-if="form.service_type && availableServices.length === 0" 
+                        <div v-else-if="form.service_type && form.service_type !== 'eims_fee' && availableServices.length === 0" 
                              class="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                             <p class="text-yellow-800">No {{ formatServiceType(form.service_type) }} services found for the selected client.</p>
                         </div>
@@ -106,8 +106,66 @@
 
                         <!-- EIMS Fee Fields -->
                         <div v-if="form.service_type === 'eims_fee'" class="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                            <h3 class="font-medium text-blue-900">EIMS Fee Details</h3>
+                            <div class="flex items-center justify-between gap-4">
+                                <h3 class="font-medium text-blue-900">EIMS Fee Details</h3>
+                                <SecondaryButton type="button" :disabled="!form.client_id || !form.service_id" @click="openStudentSummaryModal">
+                                    Fetch Student Summary
+                                </SecondaryButton>
+                            </div>
+
+                            <div>
+                                <InputLabel for="eims_domain_id" value="Domain" />
+                                <select
+                                    id="eims_domain_id"
+                                    v-model="form.service_id"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    required
+                                    @change="syncMonthlyFeeFromSelection"
+                                >
+                                    <option value="">Select a domain</option>
+                                    <option v-for="domain in clientDomains" :key="domain.id" :value="domain.id">
+                                        {{ domain.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.service_id" class="mt-2" />
+                            </div>
                             
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div>
+                                    <InputLabel for="eims_monthly" value="Monthly EIMS Fee" />
+                                    <TextInput
+                                        id="eims_monthly"
+                                        v-model="form.eims_monthly"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
+                                    <InputError :message="form.errors.eims_monthly" class="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel for="discount" value="Discount" />
+                                    <TextInput
+                                        id="discount"
+                                        v-model="form.discount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="mt-1 block w-full"
+                                    />
+                                    <InputError :message="form.errors.discount" class="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel value="Calculated Total" />
+                                    <div class="mt-1 rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-900">
+                                        {{ formatCurrency(calculatedEimsAmount) }}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <InputLabel for="total_students" value="Total Students" />
                                 <TextInput
@@ -122,31 +180,28 @@
                             </div>
 
                             <div>
-                                <InputLabel value="Billing Months" />
-                                <div class="mt-2 space-y-2">
-                                    <div v-for="(monthYear, index) in form.billing_months" :key="index" class="flex gap-2">
-                                        <input
-                                            v-model="form.billing_months[index]"
-                                            type="month"
-                                            class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            @click="removeBillingMonth(index)"
-                                            class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    @click="addBillingMonth"
-                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                <InputLabel for="billing_months" value="Billing Months" />
+                                <select
+                                    id="billing_months"
+                                    v-model="form.billing_months"
+                                    multiple
+                                    size="10"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    required
                                 >
-                                    Add Billing Month
-                                </button>
+                                    <option v-for="month in billingMonthOptions" :key="month.value" :value="month.value">
+                                        {{ month.label }}
+                                    </option>
+                                </select>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <span
+                                        v-for="month in selectedBillingMonths"
+                                        :key="month.value"
+                                        class="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-800"
+                                    >
+                                        {{ month.label }}
+                                    </span>
+                                </div>
                                 <InputError :message="form.errors.billing_months" class="mt-2" />
                             </div>
                         </div>
@@ -191,15 +246,40 @@
                 </div>
             </div>
         </div>
+
+        <Modal :show="showStudentSummaryModal" max-width="md" @close="closeStudentSummaryModal">
+            <div class="p-6">
+                <h3 class="text-lg font-medium text-gray-900">Fetch Student Summary</h3>
+                <div class="mt-4">
+                    <InputLabel for="student_summary_year" value="Year" />
+                    <TextInput
+                        id="student_summary_year"
+                        v-model="studentSummaryYear"
+                        type="number"
+                        min="2000"
+                        max="2100"
+                        class="mt-1 block w-full"
+                    />
+                    <p v-if="studentSummaryError" class="mt-2 text-sm text-red-600">{{ studentSummaryError }}</p>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <SecondaryButton type="button" @click="closeStudentSummaryModal">Cancel</SecondaryButton>
+                    <PrimaryButton type="button" :disabled="fetchingStudentSummary" @click="fetchStudentSummary">
+                        {{ fetchingStudentSummary ? 'Fetching...' : 'Fetch' }}
+                    </PrimaryButton>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
+import Modal from '@/Components/Modal.vue'
 import TextInput from '@/Components/TextInput.vue'
 import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
@@ -223,11 +303,51 @@ const form = useForm({
     due_date: props.bill.due_date,
     notes: props.bill.notes || '',
     total_students: props.bill.total_students || '',
-    billing_months: props.bill.billing_months || [''],
+    eims_monthly: props.bill.eims_monthly || '',
+    discount: props.bill.discount || '',
+    billing_months: props.bill.billing_months || [],
+    student_summary_year: props.bill.student_summary_year || '',
+    student_grand_totals: props.bill.student_grand_totals || null,
+    student_summary: props.bill.student_summary || null,
 })
 
 const availableServices = ref([])
 const today = new Date().toISOString().split('T')[0]
+const showStudentSummaryModal = ref(false)
+const studentSummaryYear = ref(String(props.bill.student_summary_year || new Date().getFullYear()))
+const studentSummaryError = ref('')
+const fetchingStudentSummary = ref(false)
+
+const selectedClient = computed(() => props.clients.find(client => client.id == form.client_id))
+const clientDomains = computed(() => props.domains.filter(domain => domain.client_id == form.client_id))
+const calculatedEimsAmount = computed(() => {
+    const students = Number(form.total_students || 0)
+    const monthly = Number(form.eims_monthly || 0)
+    const discount = Number(form.discount || 0)
+    const months = Array.isArray(form.billing_months) ? form.billing_months.length : 0
+
+    return Math.max((students * monthly * months) - discount, 0)
+})
+const billingMonthOptions = computed(() => {
+    const options = []
+    const current = new Date()
+    current.setDate(1)
+
+    for (let offset = -18; offset <= 12; offset += 1) {
+        const date = new Date(current)
+        date.setMonth(current.getMonth() + offset)
+        const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        options.push({
+            value,
+            label: date.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+        })
+    }
+
+    return options
+})
+const selectedBillingMonths = computed(() => {
+    return billingMonthOptions.value.filter(month => form.billing_months.includes(month.value))
+})
 
 const filterServices = () => {
     if (form.client_id !== props.bill.client_id) {
@@ -261,21 +381,10 @@ const updateServiceOptions = () => {
             )
             break
         case 'eims_fee':
-            // EIMS Fee doesn't need service selection
             availableServices.value = []
             break
         default:
             availableServices.value = []
-    }
-}
-
-const addBillingMonth = () => {
-    form.billing_months.push('')
-}
-
-const removeBillingMonth = (index) => {
-    if (form.billing_months.length > 1) {
-        form.billing_months.splice(index, 1)
     }
 }
 
@@ -285,6 +394,49 @@ const updateAmountFromService = () => {
         if (selectedService && selectedService.price) {
             form.amount = Number(selectedService.price).toFixed(2)
         }
+    }
+}
+
+const syncMonthlyFeeFromSelection = () => {
+    if (form.service_type !== 'eims_fee' || form.eims_monthly) {
+        return
+    }
+
+    form.eims_monthly = selectedClient.value?.eims_monthly
+        ? Number(selectedClient.value.eims_monthly).toFixed(2)
+        : ''
+}
+
+const openStudentSummaryModal = () => {
+    studentSummaryError.value = ''
+    showStudentSummaryModal.value = true
+}
+
+const closeStudentSummaryModal = () => {
+    showStudentSummaryModal.value = false
+}
+
+const fetchStudentSummary = async () => {
+    studentSummaryError.value = ''
+    fetchingStudentSummary.value = true
+
+    try {
+        const response = await window.axios.post(route('bills.fetch-student-summary'), {
+            client_id: form.client_id,
+            domain_id: form.service_id,
+            year: studentSummaryYear.value,
+        })
+        const summary = response.data
+
+        form.student_summary_year = String(summary.year || studentSummaryYear.value)
+        form.student_grand_totals = summary.grand_totals || {}
+        form.student_summary = summary.summary || []
+        form.total_students = String(summary.grand_totals?.regular || 0)
+        closeStudentSummaryModal()
+    } catch (error) {
+        studentSummaryError.value = error.response?.data?.message || 'Unable to fetch student summary.'
+    } finally {
+        fetchingStudentSummary.value = false
     }
 }
 
@@ -315,8 +467,23 @@ const submit = () => {
     form.patch(route('bills.update', props.bill.id))
 }
 
+watch(calculatedEimsAmount, (amount) => {
+    if (form.service_type === 'eims_fee') {
+        form.amount = amount.toFixed(2)
+    }
+})
+
+watch(() => form.client_id, () => {
+    if (form.service_type === 'eims_fee' && form.client_id !== props.bill.client_id) {
+        form.service_id = ''
+        form.eims_monthly = ''
+        syncMonthlyFeeFromSelection()
+    }
+})
+
 onMounted(() => {
     // Initialize available services based on current bill data
     updateServiceOptions()
+    syncMonthlyFeeFromSelection()
 })
 </script> 

@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Bill routes
     Route::resource('bills', BillController::class);
+    Route::post('/bills/fetch-student-summary', [BillController::class, 'fetchStudentSummary'])
+        ->name('bills.fetch-student-summary');
     Route::patch('/bills/{bill}/approve', [BillController::class, 'approve'])
         ->name('bills.approve');
     Route::patch('/bills/{bill}/payment', [BillController::class, 'updatePayment'])

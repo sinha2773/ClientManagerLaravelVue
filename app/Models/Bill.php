@@ -27,16 +27,25 @@ class Bill extends Model
         'approved_at',
         'notes',
         'total_students',
+        'eims_monthly',
+        'discount',
         'billing_months',
+        'student_summary_year',
+        'student_grand_totals',
+        'student_summary',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'eims_monthly' => 'decimal:2',
+        'discount' => 'decimal:2',
         'due_date' => 'date',
         'paid_date' => 'date',
         'approved_at' => 'datetime',
         'billing_months' => 'array',
+        'student_grand_totals' => 'array',
+        'student_summary' => 'array',
     ];
 
     /**
