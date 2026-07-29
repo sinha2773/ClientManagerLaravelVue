@@ -298,7 +298,7 @@ class BillController extends Controller
         $baseUrl = $this->buildStudentManagementBaseUrl($domain->name);
         $apiToken = config('services.client_management.api_token');
 
-        if (blank($apiToken) || $apiToken === 'client_management_api_token') {
+        if (blank($apiToken) || $apiToken !== 'client_management_api_token') {
             Log::warning('Student summary fetch blocked: missing client management API token.', [
                 'domain_id' => $domain->id,
                 'domain' => $domain->name,
