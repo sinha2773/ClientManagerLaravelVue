@@ -313,6 +313,7 @@ class BillController extends Controller
         try {
             $response = Http::timeout(20)
                 ->acceptJson()
+                ->withUserAgent('ClientManager/1.0 (+https://clientmanager.codegaon.com)')
                 ->get($baseUrl.'/api/ClntManApi.php', [
                     'action' => 'getTotalStudent',
                     'api_token' => $apiToken,
