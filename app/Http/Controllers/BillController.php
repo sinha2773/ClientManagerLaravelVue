@@ -10,6 +10,7 @@ use App\Models\SslCertificate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class BillController extends Controller
@@ -295,15 +296,52 @@ class BillController extends Controller
             ->firstOrFail();
 
         $baseUrl = $this->buildStudentManagementBaseUrl($domain->name);
-        $response = Http::timeout(20)
-            ->acceptJson()
-            ->get($baseUrl.'/api/ClntManApi.php', [
-                'action' => 'getTotalStudent',
-                'api_token' => config('services.client_management.api_token'),
+        $apiToken = config('services.client_management.api_token');
+
+        if (blank($apiToken) || $apiToken === 'client_management_api_token') {
+            Log::warning('Student summary fetch blocked: missing client management API token.', [
+                'domain_id' => $domain->id,
+                'domain' => $domain->name,
                 'year' => $validated['year'],
             ]);
 
+            return response()->json([
+                'message' => 'Client management API token is not configured on this server.',
+            ], 422);
+        }
+
+        try {
+            $response = Http::timeout(20)
+                ->acceptJson()
+                ->get($baseUrl.'/api/ClntManApi.php', [
+                    'action' => 'getTotalStudent',
+                    'api_token' => $apiToken,
+                    'year' => $validated['year'],
+                ]);
+        } catch (\Throwable $exception) {
+            Log::warning('Student summary fetch failed: EIMS request exception.', [
+                'domain_id' => $domain->id,
+                'domain' => $domain->name,
+                'url' => $baseUrl.'/api/ClntManApi.php',
+                'year' => $validated['year'],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Unable to connect to the selected EIMS domain.',
+            ], 422);
+        }
+
         if (! $response->successful()) {
+            Log::warning('Student summary fetch failed: EIMS returned an HTTP error.', [
+                'domain_id' => $domain->id,
+                'domain' => $domain->name,
+                'url' => $baseUrl.'/api/ClntManApi.php',
+                'year' => $validated['year'],
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(500)->toString(),
+            ]);
+
             return response()->json([
                 'message' => 'Unable to fetch student summary from the selected domain.',
             ], 422);
@@ -312,6 +350,16 @@ class BillController extends Controller
         $payload = $response->json();
 
         if (($payload['code'] ?? null) !== 200 || (int) ($payload['status'] ?? 0) !== 1) {
+            Log::warning('Student summary fetch failed: EIMS returned an application error.', [
+                'domain_id' => $domain->id,
+                'domain' => $domain->name,
+                'url' => $baseUrl.'/api/ClntManApi.php',
+                'year' => $validated['year'],
+                'code' => $payload['code'] ?? null,
+                'status' => $payload['status'] ?? null,
+                'message' => $payload['message'] ?? null,
+            ]);
+
             return response()->json([
                 'message' => $payload['message'] ?? 'Student summary request failed.',
             ], 422);
