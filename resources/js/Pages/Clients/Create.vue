@@ -112,9 +112,9 @@
                                     v-model="form.client_type"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 >
-                                    <option value="government">Government</option>
-                                    <option value="private">Private</option>
-                                    <option value="other">Other</option>
+                                    <option v-for="type in CLIENT_TYPES" :key="type.value" :value="type.value">
+                                        {{ type.label }}
+                                    </option>
                                 </select>
                                 <InputError :message="form.errors.client_type" class="mt-2" />
                             </div>
@@ -185,6 +185,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import { CLIENT_TYPES } from '@/constants/clientTypes';
 import { ref } from 'vue';
 
 const props = defineProps({

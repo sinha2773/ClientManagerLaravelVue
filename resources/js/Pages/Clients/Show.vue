@@ -72,7 +72,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Client Type</p>
-                                <p class="text-base capitalize">{{ client.client_type || '-' }}</p>
+                                <p class="text-base">{{ client.client_type ? formatClientType(client.client_type) : '-' }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Monthly Student Fee</p>
@@ -348,6 +348,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { formatClientType } from '@/constants/clientTypes';
 
 function formatCurrency(value) {
     if (value === null || value === undefined || value === '') {

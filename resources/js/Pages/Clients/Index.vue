@@ -48,9 +48,9 @@
                                     @change="applyFilters"
                                 >
                                     <option value="">All Types</option>
-                                    <option value="government">Government</option>
-                                    <option value="private">Private</option>
-                                    <option value="other">Other</option>
+                                    <option v-for="type in CLIENT_TYPES" :key="type.value" :value="type.value">
+                                        {{ type.label }}
+                                    </option>
                                 </select>
                             </div>
                             <div>
@@ -108,8 +108,8 @@
                                              <div v-if="client.category" class="text-xs text-indigo-600 mt-1">
                                                   {{ client.category.name }}
                                               </div>
-                                              <div v-if="client.client_type" class="text-xs text-gray-400 mt-1 capitalize">
-                                                  {{ client.client_type }}
+                                              <div v-if="client.client_type" class="text-xs text-gray-400 mt-1">
+                                                  {{ formatClientType(client.client_type) }}
                                               </div>
                                          </td>
                                         <td class="whitespace-nowrap px-6 py-4">
@@ -168,6 +168,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { CLIENT_TYPES, formatClientType } from '@/constants/clientTypes';
 import { ref } from 'vue';
 
 const props = defineProps({

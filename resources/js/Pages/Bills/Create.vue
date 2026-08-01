@@ -22,9 +22,9 @@
                                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                             >
                                 <option value="">All Types</option>
-                                <option value="government">Government</option>
-                                <option value="private">Private</option>
-                                <option value="other">Other</option>
+                                <option v-for="type in CLIENT_TYPES" :key="type.value" :value="type.value">
+                                    {{ type.label }}
+                                </option>
                             </select>
                         </div>
 
@@ -317,6 +317,7 @@ import TextInput from '@/Components/TextInput.vue'
 import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
+import { CLIENT_TYPES, formatClientType } from '@/constants/clientTypes'
 import { formatCurrency } from '@/utils/currency.js'
 
 const props = defineProps({
@@ -537,16 +538,6 @@ const formatServiceType = (type) => {
         eims_fee: 'EIMS Fee'
     }
     return types[type] || type
-}
-
-const formatClientType = (type) => {
-    const types = {
-        government: 'Government',
-        private: 'Private',
-        other: 'Other',
-    }
-
-    return types[type] || 'Other'
 }
 
 const submit = () => {

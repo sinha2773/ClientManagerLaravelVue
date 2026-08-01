@@ -9,6 +9,8 @@ use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    private const CLIENT_TYPES = ['government', 'non_government', 'mpo_based', 'private', 'other'];
+
     public function index(Request $request)
     {
         $query = Client::with(['domains', 'hostingServices', 'sslCertificates', 'category']);
@@ -87,7 +89,7 @@ class ClientController extends Controller
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
-            'client_type' => 'required|in:government,private,other',
+            'client_type' => 'required|in:'.implode(',', self::CLIENT_TYPES),
             'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
             'eims_monthly' => 'nullable|numeric|min:0|max:99999999.99',
         ]);
@@ -134,7 +136,7 @@ class ClientController extends Controller
             'address' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'client_category_id' => 'nullable|exists:client_categories,id',
-            'client_type' => 'required|in:government,private,other',
+            'client_type' => 'required|in:'.implode(',', self::CLIENT_TYPES),
             'marketing_partner_id' => 'nullable|exists:marketing_partners,id',
             'eims_monthly' => 'nullable|numeric|min:0|max:99999999.99',
         ]);
