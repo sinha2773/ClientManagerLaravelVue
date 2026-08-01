@@ -75,7 +75,7 @@ class BillController extends Controller
             abort(403, 'Unauthorized to create bills.');
         }
 
-        $clients = Client::select('id', 'name', 'email', 'eims_monthly')->get();
+        $clients = Client::select('id', 'name', 'email', 'client_type', 'eims_monthly')->get();
         $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price')->get();
         $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
         $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();

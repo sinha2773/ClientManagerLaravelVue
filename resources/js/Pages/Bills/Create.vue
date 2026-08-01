@@ -13,21 +13,56 @@
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <form @submit.prevent="submit" class="p-6 space-y-6">
-                        <!-- Client Selection -->
+                        <!-- Client Type Filter -->
                         <div>
-                            <InputLabel for="client_id" value="Client" />
+                            <InputLabel for="client_type_filter" value="Filter by Client Type" />
                             <select
-                                id="client_id"
-                                v-model="form.client_id"
+                                id="client_type_filter"
+                                v-model="clientTypeFilter"
                                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                required
-                                @change="filterServices"
                             >
-                                <option value="">Select a client</option>
-                                <option v-for="client in clients" :key="client.id" :value="client.id">
-                                    {{ client.name }} ({{ client.email }})
-                                </option>
+                                <option value="">All Types</option>
+                                <option value="government">Government</option>
+                                <option value="private">Private</option>
+                                <option value="other">Other</option>
                             </select>
+                        </div>
+
+                        <!-- Client Selection -->
+                        <div class="relative">
+                            <InputLabel for="client_id" value="Client" />
+                            <TextInput
+                                id="client_id"
+                                v-model="clientSearch"
+                                type="text"
+                                class="mt-1 block w-full"
+                                autocomplete="off"
+                                placeholder="Search client by name"
+                                required
+                                @focus="showClientDropdown = true"
+                                @blur="hideClientDropdown"
+                                @input="handleClientSearch"
+                                @keydown.escape="showClientDropdown = false"
+                            />
+                            <div
+                                v-if="showClientDropdown"
+                                class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+                            >
+                                <button
+                                    v-for="client in filteredClients"
+                                    :key="client.id"
+                                    type="button"
+                                    class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+                                    @mousedown.prevent="selectClient(client)"
+                                >
+                                    <span class="font-medium text-gray-900">{{ client.name }}</span>
+                                    <span class="text-gray-500"> ({{ client.email }})</span>
+                                    <span class="text-gray-400"> - {{ formatClientType(client.client_type) }}</span>
+                                </button>
+                                <div v-if="filteredClients.length === 0" class="px-3 py-2 text-sm text-gray-500">
+                                    No clients found
+                                </div>
+                            </div>
                             <InputError :message="form.errors.client_id" class="mt-2" />
                         </div>
 
@@ -313,12 +348,25 @@ const form = useForm({
 })
 
 const availableServices = ref([])
+const clientTypeFilter = ref('')
+const clientSearch = ref('')
+const showClientDropdown = ref(false)
 const today = new Date().toISOString().split('T')[0]
 const showStudentSummaryModal = ref(false)
 const studentSummaryYear = ref(String(new Date().getFullYear()))
 const studentSummaryError = ref('')
 const fetchingStudentSummary = ref(false)
 
+const filteredClients = computed(() => {
+    const search = clientSearch.value.trim().toLowerCase()
+
+    return props.clients.filter((client) => {
+        const matchesType = !clientTypeFilter.value || client.client_type === clientTypeFilter.value
+        const matchesName = !search || client.name.toLowerCase().includes(search)
+
+        return matchesType && matchesName
+    })
+})
 const selectedClient = computed(() => props.clients.find(client => client.id == form.client_id))
 const clientDomains = computed(() => props.domains.filter(domain => domain.client_id == form.client_id))
 const calculatedEimsAmount = computed(() => {
@@ -354,6 +402,36 @@ const filterServices = () => {
     form.service_id = ''
     form.service_type = ''
     updateServiceOptions()
+}
+
+const clearClientSelection = () => {
+    form.client_id = ''
+    filterServices()
+}
+
+const formatClientOption = (client) => {
+    return client ? `${client.name} (${client.email})` : ''
+}
+
+const handleClientSearch = () => {
+    showClientDropdown.value = true
+
+    if (selectedClient.value && clientSearch.value !== formatClientOption(selectedClient.value)) {
+        clearClientSelection()
+    }
+}
+
+const selectClient = (client) => {
+    form.client_id = String(client.id)
+    clientSearch.value = formatClientOption(client)
+    showClientDropdown.value = false
+    filterServices()
+}
+
+const hideClientDropdown = () => {
+    setTimeout(() => {
+        showClientDropdown.value = false
+    }, 150)
 }
 
 const updateServiceOptions = () => {
@@ -461,7 +539,22 @@ const formatServiceType = (type) => {
     return types[type] || type
 }
 
+const formatClientType = (type) => {
+    const types = {
+        government: 'Government',
+        private: 'Private',
+        other: 'Other',
+    }
+
+    return types[type] || 'Other'
+}
+
 const submit = () => {
+    if (!form.client_id) {
+        form.setError('client_id', 'Please select a client from the list.')
+        return
+    }
+
     form.post(route('bills.store'))
 }
 
@@ -478,6 +571,15 @@ watch(() => form.client_id, () => {
     }
 })
 
+watch(clientTypeFilter, () => {
+    const client = selectedClient.value
+
+    if (client && client.client_type !== clientTypeFilter.value && clientTypeFilter.value) {
+        clientSearch.value = ''
+        clearClientSelection()
+    }
+})
+
 onMounted(() => {
     const defaultDueDate = new Date()
     defaultDueDate.setDate(defaultDueDate.getDate() + 30)
@@ -486,6 +588,10 @@ onMounted(() => {
     if (props.prefill) {
         if (props.prefill.client_id) {
             form.client_id = String(props.prefill.client_id)
+            if (selectedClient.value) {
+                clientTypeFilter.value = selectedClient.value.client_type || ''
+                clientSearch.value = formatClientOption(selectedClient.value)
+            }
         }
         if (props.prefill.service_type) {
             form.service_type = props.prefill.service_type
