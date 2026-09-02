@@ -185,6 +185,11 @@ const servicesButtonClasses = computed(() => {
                                             Profile
                                         </DropdownLink>
                                         <DropdownLink
+                                            :href="route('activity-logs.index')"
+                                        >
+                                            Activity Logs
+                                        </DropdownLink>
+                                        <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
@@ -350,6 +355,12 @@ const servicesButtonClasses = computed(() => {
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('activity-logs.index')"
+                                :active="route().current('activity-logs.*')"
+                            >
+                                Activity Logs
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 :href="route('logout')"
