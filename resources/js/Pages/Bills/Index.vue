@@ -15,7 +15,7 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Filters</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
                             <div>
                                 <InputLabel for="search" value="Search" />
                                 <TextInput
@@ -68,6 +68,21 @@
                                     <option value="domain">Domain</option>
                                     <option value="hosting">Hosting</option>
                                     <option value="ssl_certificate">SSL Certificate</option>
+                                    <option value="eims_fee">EIMS Fees</option>
+                                </select>
+                            </div>
+                            <div>
+                                <InputLabel for="academic_year" value="Academic Year" />
+                                <select
+                                    id="academic_year"
+                                    v-model="filters.academic_year"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All Academic Years</option>
+                                    <option v-for="year in academicYears" :key="year" :value="year">
+                                        {{ year }}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -89,6 +104,9 @@
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Service
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Academic Year
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Amount
@@ -120,6 +138,9 @@
                                                 :class="getServiceTypeClass(bill.service_type)">
                                                 {{ formatServiceType(bill.service_type) }}
                                             </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ bill.academic_year || '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ formatCurrency(bill.amount) }}
@@ -169,7 +190,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="bills.data.length === 0">
-                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                             No bills found
                                         </td>
                                     </tr>
@@ -234,6 +255,7 @@ const props = defineProps({
     bills: Object,
     filters: Object,
     canApprove: Boolean,
+    academicYears: Array,
 })
 
 const filters = ref({
@@ -241,6 +263,7 @@ const filters = ref({
     payment_status: props.filters.payment_status || '',
     status: props.filters.status || '',
     service_type: props.filters.service_type || '',
+    academic_year: props.filters.academic_year || '',
 })
 
 const applyFilters = () => {
@@ -261,7 +284,8 @@ const formatServiceType = (type) => {
     const types = {
         domain: 'Domain',
         hosting: 'Hosting',
-        ssl_certificate: 'SSL Certificate'
+        ssl_certificate: 'SSL Certificate',
+        eims_fee: 'EIMS Fees'
     }
     return types[type] || type
 }
@@ -299,7 +323,8 @@ const getServiceTypeClass = (type) => {
     const classes = {
         domain: 'bg-blue-100 text-blue-800',
         hosting: 'bg-green-100 text-green-800',
-        ssl_certificate: 'bg-purple-100 text-purple-800'
+        ssl_certificate: 'bg-purple-100 text-purple-800',
+        eims_fee: 'bg-indigo-100 text-indigo-800'
     }
     return classes[type] || 'bg-gray-100 text-gray-800'
 }
@@ -322,4 +347,4 @@ const getStatusClass = (status) => {
     }
     return classes[status] || 'bg-gray-100 text-gray-800'
 }
-</script> 
+</script>

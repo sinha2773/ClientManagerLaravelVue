@@ -6,23 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('bills', function (Blueprint $table) {
-            $table->enum('service_type', ['domain', 'hosting', 'ssl_certificate', 'eims_fee'])->change();
+            // Nullable keeps existing bills valid; the application requires it for new bills.
+            $table->string('academic_year', 20)->nullable()->after('description')->index();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('bills', function (Blueprint $table) {
-            $table->enum('service_type', ['domain', 'hosting', 'ssl_certificate'])->change();
+            $table->dropIndex(['academic_year']);
+            $table->dropColumn('academic_year');
         });
     }
 };

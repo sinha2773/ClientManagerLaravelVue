@@ -76,8 +76,29 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Monthly Student Fee</p>
-                                <p class="text-base">{{ formatCurrency(client.eims_monthly) }}</p>
+                                <p class="text-base">Tk {{ formatCurrency(client.eims_monthly) }}</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bill Actions -->
+                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900">Generate Bill</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Start a bill with {{ client.name }} and the selected fee type prefilled.
+                        </p>
+                        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <Link
+                                v-for="action in billActions"
+                                :key="action.serviceType"
+                                :href="route('bills.create', { client_id: client.id, service_type: action.serviceType })"
+                                class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                :class="action.className"
+                            >
+                                {{ action.label }}
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -89,7 +110,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <p class="text-sm text-gray-600">Total Spent</p>
-                                <p class="text-2xl font-semibold">${{ stats.total_spent.toFixed(2) }}</p>
+                                <p class="text-2xl font-semibold">Tk {{ formatCurrency(stats.total_spent) }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Active Services</p>
@@ -340,6 +361,101 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Billing History -->
+                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">Billing History</h3>
+                                <p class="mt-1 text-sm text-gray-500">Bills generated for {{ client.name }}.</p>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="billing_academic_year" class="block text-sm font-medium text-gray-700">Academic Year</label>
+                                    <select
+                                        id="billing_academic_year"
+                                        v-model="billingFilterForm.academic_year"
+                                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        @change="applyBillingFilters"
+                                    >
+                                        <option value="">All Academic Years</option>
+                                        <option v-for="year in academicYears" :key="year" :value="year">{{ year }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="billing_type" class="block text-sm font-medium text-gray-700">Billing Type</label>
+                                    <select
+                                        id="billing_type"
+                                        v-model="billingFilterForm.billing_type"
+                                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        @change="applyBillingFilters"
+                                    >
+                                        <option value="">All Billing Types</option>
+                                        <option value="domain">Domain</option>
+                                        <option value="hosting">Hosting</option>
+                                        <option value="ssl_certificate">SSL</option>
+                                        <option value="eims_fee">EIMS Fees</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Bill Number</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Academic Year</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Amount</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Payment</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Created</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    <tr v-for="bill in billingHistory.data" :key="bill.id">
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900">{{ bill.bill_number }}</td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-700">{{ bill.academic_year || '-' }}</td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-700">{{ formatBillingType(bill.service_type) }}</td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-right text-sm font-medium text-gray-900">Tk {{ formatCurrency(bill.amount) }}</td>
+                                        <td class="whitespace-nowrap px-4 py-4">
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                                                :class="bill.payment_status === 'paid' ? 'bg-green-100 text-green-800' : bill.payment_status === 'partially_paid' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'"
+                                            >
+                                                {{ formatPaymentStatus(bill.payment_status) }}
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-700">{{ formatDate(bill.created_at) }}</td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-right text-sm font-medium">
+                                            <Link :href="route('bills.show', bill.id)" class="text-indigo-600 hover:text-indigo-900">View</Link>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="billingHistory.data.length === 0">
+                                        <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No bills found for these filters.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div v-if="billingHistory.last_page > 1" class="mt-6 flex flex-wrap gap-1">
+                            <Link
+                                v-for="link in billingHistory.links"
+                                :key="link.label"
+                                :href="link.url || '#'"
+                                preserve-scroll
+                                class="rounded-md border px-3 py-2 text-sm"
+                                :class="[
+                                    link.active ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 bg-white text-gray-600',
+                                    !link.url ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50',
+                                ]"
+                                v-html="link.label"
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -349,6 +465,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { formatClientType } from '@/constants/clientTypes';
+import { ref } from 'vue';
 
 function formatCurrency(value) {
     if (value === null || value === undefined || value === '') {
@@ -366,8 +483,61 @@ const props = defineProps({
     stats: {
         type: Object,
         required: true
-    }
+    },
+    billingHistory: {
+        type: Object,
+        required: true
+    },
+    billingFilters: {
+        type: Object,
+        required: true
+    },
+    academicYears: {
+        type: Array,
+        required: true
+    },
 });
+
+const billingFilterForm = ref({
+    academic_year: props.billingFilters.academic_year || '',
+    billing_type: props.billingFilters.billing_type || '',
+});
+
+const billActions = [
+    { label: 'Domain Bill', serviceType: 'domain', className: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' },
+    { label: 'Hosting Bill', serviceType: 'hosting', className: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' },
+    { label: 'SSL Bill', serviceType: 'ssl_certificate', className: 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500' },
+    { label: 'EIMS Fees Bill', serviceType: 'eims_fee', className: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500' },
+];
+
+function applyBillingFilters() {
+    router.get(route('clients.show', props.client.id), billingFilterForm.value, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+}
+
+function formatBillingType(type) {
+    return {
+        domain: 'Domain',
+        hosting: 'Hosting',
+        ssl_certificate: 'SSL',
+        eims_fee: 'EIMS Fees',
+    }[type] || type;
+}
+
+function formatPaymentStatus(status) {
+    return {
+        unpaid: 'Unpaid',
+        partially_paid: 'Partially Paid',
+        paid: 'Paid',
+    }[status] || status;
+}
+
+function formatDate(value) {
+    return new Date(value).toLocaleDateString();
+}
 
 function deleteClient() {
     if (confirm(`Are you sure you want to delete ${props.client.name}? This will also delete all associated domains, SSL certificates, and hosting services.`)) {

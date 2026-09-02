@@ -16,6 +16,7 @@ class Bill extends Model
         'service_type',
         'service_id',
         'description',
+        'academic_year',
         'amount',
         'paid_amount',
         'payment_status',

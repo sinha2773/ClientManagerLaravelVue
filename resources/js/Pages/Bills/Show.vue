@@ -57,6 +57,8 @@
                                 <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                     <dt class="text-gray-500">Service Type</dt>
                                     <dd class="text-right font-medium text-gray-900">{{ formatServiceType(bill.service_type) }}</dd>
+                                    <dt class="text-gray-500">Academic Year</dt>
+                                    <dd class="text-right font-medium text-gray-900">{{ bill.academic_year || '-' }}</dd>
                                     <dt class="text-gray-500">Status</dt>
                                     <dd class="text-right font-medium text-gray-900">{{ formatStatus(bill.status) }}</dd>
                                     <dt class="text-gray-500">Payment</dt>
@@ -155,6 +157,10 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Client</label>
                                         <p class="mt-1 text-sm text-gray-900">{{ bill.client.name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Academic Year</label>
+                                        <p class="mt-1 text-sm text-gray-900">{{ bill.academic_year || '-' }}</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Service Type</label>

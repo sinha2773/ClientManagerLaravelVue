@@ -7,10 +7,12 @@ use App\Models\Client;
 use App\Models\Domain;
 use App\Models\HostingService;
 use App\Models\SslCertificate;
+use App\Support\AcademicYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class BillController extends Controller
@@ -43,6 +45,10 @@ class BillController extends Controller
             $query->where('service_type', $request->service_type);
         }
 
+        if ($request->filled('academic_year')) {
+            $query->where('academic_year', $request->academic_year);
+        }
+
         // Search by bill number or client name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -55,11 +61,12 @@ class BillController extends Controller
             });
         }
 
-        $bills = $query->orderBy('created_at', 'desc')->paginate(15);
+        $bills = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render('Bills/Index', [
             'bills' => $bills,
-            'filters' => $request->only(['payment_status', 'status', 'service_type', 'search']),
+            'filters' => $request->only(['payment_status', 'status', 'service_type', 'academic_year', 'search']),
+            'academicYears' => AcademicYear::options(),
             'canApprove' => $user->canApproveBills(),
         ]);
     }
@@ -85,6 +92,7 @@ class BillController extends Controller
             'domains' => $domains,
             'hostingServices' => $hostingServices,
             'sslCertificates' => $sslCertificates,
+            'academicYears' => AcademicYear::options(),
             'prefill' => [
                 'client_id' => $request->query('client_id'),
                 'service_type' => $request->query('service_type'),
@@ -180,6 +188,7 @@ class BillController extends Controller
             'domains' => $domains,
             'hostingServices' => $hostingServices,
             'sslCertificates' => $sslCertificates,
+            'academicYears' => AcademicYear::options(),
         ]);
     }
 
@@ -415,6 +424,7 @@ class BillController extends Controller
             'client_id' => 'required|exists:clients,id',
             'service_type' => 'required|in:domain,hosting,ssl_certificate,eims_fee',
             'description' => 'required|string|max:255',
+            'academic_year' => ['required', Rule::in(AcademicYear::options())],
             'amount' => 'required|numeric|min:0',
             'due_date' => 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',

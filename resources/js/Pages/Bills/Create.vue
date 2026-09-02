@@ -239,6 +239,23 @@
                             </div>
                         </div>
 
+                        <!-- Academic Year -->
+                        <div>
+                            <InputLabel for="academic_year" value="Academic Year" />
+                            <select
+                                id="academic_year"
+                                v-model="form.academic_year"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                required
+                            >
+                                <option value="" disabled>Select academic year</option>
+                                <option v-for="year in academicYears" :key="year" :value="year">
+                                    {{ year }}
+                                </option>
+                            </select>
+                            <InputError :message="form.errors.academic_year" class="mt-2" />
+                        </div>
+
                         <!-- Due Date -->
                         <div>
                             <InputLabel for="due_date" value="Due Date" />
@@ -325,6 +342,7 @@ const props = defineProps({
     domains: Array,
     hostingServices: Array,
     sslCertificates: Array,
+    academicYears: Array,
     prefill: {
         type: Object,
         default: () => ({ client_id: null, service_type: null, service_id: null }),
@@ -336,6 +354,7 @@ const form = useForm({
     service_type: '',
     service_id: '',
     description: '',
+    academic_year: String(new Date().getFullYear()),
     amount: '',
     due_date: '',
     notes: '',
@@ -471,6 +490,9 @@ const updateAmountFromService = () => {
         if (selectedService && selectedService.price) {
             form.amount = Number(selectedService.price).toFixed(2)
         }
+        if (selectedService) {
+            form.description = `Renewal for ${getServiceDisplayName(selectedService)}`
+        }
     }
 }
 
@@ -586,6 +608,9 @@ onMounted(() => {
         }
         if (props.prefill.service_type) {
             form.service_type = props.prefill.service_type
+            if (selectedClient.value) {
+                form.description = `${formatServiceType(form.service_type)} for ${selectedClient.value.name}`
+            }
         }
         if (props.prefill.client_id && props.prefill.service_type) {
             updateServiceOptions()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\MarketingPartner;
+use App\Support\AcademicYear;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -100,16 +101,41 @@ class ClientController extends Controller
             ->with('message', 'Client created successfully.');
     }
 
-    public function show(Client $client)
+    public function show(Request $request, Client $client)
     {
         $client->load(['domains', 'sslCertificates', 'hostingServices']);
+
+        $academicYears = AcademicYear::options();
+        $academicYear = $request->string('academic_year')->toString();
+        $billingType = $request->string('billing_type')->toString();
+        $serviceTypes = ['domain', 'hosting', 'ssl_certificate', 'eims_fee'];
+
+        $academicYear = in_array($academicYear, $academicYears, true) ? $academicYear : '';
+        $billingType = in_array($billingType, $serviceTypes, true) ? $billingType : '';
+
+        $billingHistory = $client->bills()
+            ->when($academicYear, fn ($query) => $query->where('academic_year', $academicYear))
+            ->when($billingType, fn ($query) => $query->where('service_type', $billingType))
+            ->latest()
+            ->paginate(10, ['*'], 'billing_page')
+            ->withQueryString();
 
         return Inertia::render('Clients/Show', [
             'client' => $client,
             'stats' => [
                 'total_spent' => $client->getTotalSpent(),
-                'active_services' => $client->getActiveServicesCount(),
+                'active_services' => [
+                    'domains' => $client->domains->where('status', 'active')->count(),
+                    'ssl_certificates' => $client->sslCertificates->where('status', 'active')->count(),
+                    'hosting_services' => $client->hostingServices->where('status', 'active')->count(),
+                ],
             ],
+            'billingHistory' => $billingHistory,
+            'billingFilters' => [
+                'academic_year' => $academicYear,
+                'billing_type' => $billingType,
+            ],
+            'academicYears' => $academicYears,
         ]);
     }
 

@@ -206,6 +206,23 @@
                             </div>
                         </div>
 
+                        <!-- Academic Year -->
+                        <div>
+                            <InputLabel for="academic_year" value="Academic Year" />
+                            <select
+                                id="academic_year"
+                                v-model="form.academic_year"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                required
+                            >
+                                <option value="" disabled>Select academic year</option>
+                                <option v-for="year in academicYears" :key="year" :value="year">
+                                    {{ year }}
+                                </option>
+                            </select>
+                            <InputError :message="form.errors.academic_year" class="mt-2" />
+                        </div>
+
                         <!-- Payment Status -->
                         <div>
                             <InputLabel for="due_date" value="Due Date" />
@@ -292,6 +309,7 @@ const props = defineProps({
     domains: Array,
     hostingServices: Array,
     sslCertificates: Array,
+    academicYears: Array,
 })
 
 const form = useForm({
@@ -299,6 +317,7 @@ const form = useForm({
     service_type: props.bill.service_type,
     service_id: props.bill.service_id,
     description: props.bill.description,
+    academic_year: props.bill.academic_year || String(new Date().getFullYear()),
     amount: props.bill.amount,
     due_date: props.bill.due_date,
     notes: props.bill.notes || '',

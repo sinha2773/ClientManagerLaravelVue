@@ -142,8 +142,14 @@
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <Link
+                                                :href="route('clients.show', client.id)"
+                                                class="text-blue-600 hover:text-blue-900"
+                                            >
+                                                View
+                                            </Link>
+                                            <Link
                                                 :href="route('clients.edit', client.id)"
-                                                class="text-indigo-600 hover:text-indigo-900"
+                                                class="ml-4 text-indigo-600 hover:text-indigo-900"
                                             >
                                                 Edit
                                             </Link>
