@@ -79,32 +79,39 @@
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="w-full min-w-[60rem] table-fixed divide-y divide-gray-200">
+                                <colgroup>
+                                    <col class="w-56" />
+                                    <col class="w-56" />
+                                    <col class="w-60" />
+                                    <col class="w-28" />
+                                    <col class="w-40" />
+                                </colgroup>
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Name
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Contact
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Services
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Status
                                         </th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 bg-white">
                                     <tr v-for="client in clients" :key="client.id">
-                                         <td class="whitespace-nowrap px-6 py-4">
-                                             <div class="font-medium text-gray-900">{{ client.name }}</div>
-                                             <div v-if="client.short_name" class="text-sm text-gray-400">{{ client.short_name }}</div>
-                                             <div class="text-sm text-gray-500">{{ client.company }}</div>
+                                         <td class="px-3 py-2 align-top">
+                                             <div class="break-words font-medium leading-snug text-gray-900">{{ client.name }}</div>
+                                             <div v-if="client.short_name" class="mt-1 break-words text-sm text-gray-400">{{ client.short_name }}</div>
+                                             <div class="break-words text-sm text-gray-500">{{ client.company }}</div>
                                              <div v-if="client.category" class="text-xs text-indigo-600 mt-1">
                                                   {{ client.category.name }}
                                               </div>
@@ -112,12 +119,12 @@
                                                   {{ formatClientType(client.client_type) }}
                                               </div>
                                          </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ client.email }}</div>
+                                        <td class="px-3 py-2 align-top">
+                                            <div class="break-all text-sm text-gray-900">{{ client.email }}</div>
                                             <div class="text-sm text-gray-500">{{ client.phone }}</div>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
-                                            <div class="space-x-2">
+                                        <td class="px-3 py-2 align-top">
+                                            <div class="flex flex-wrap gap-1">
                                                 <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
                                                     {{ client.domains_count }} Domains
                                                 </span>
@@ -129,7 +136,7 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td class="whitespace-nowrap px-3 py-2 align-top">
                                             <span
                                                 :class="{
                                                     'bg-green-100 text-green-800': client.status === 'active',
@@ -140,25 +147,27 @@
                                                 {{ client.status }}
                                             </span>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                            <Link
-                                                :href="route('clients.show', client.id)"
-                                                class="text-blue-600 hover:text-blue-900"
-                                            >
-                                                View
-                                            </Link>
-                                            <Link
-                                                :href="route('clients.edit', client.id)"
-                                                class="ml-4 text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                @click="deleteClient(client.id)"
-                                                class="ml-4 text-red-600 hover:text-red-900"
-                                            >
-                                                Delete
-                                            </button>
+                                        <td class="px-3 py-2 align-top text-right text-sm font-medium">
+                                            <div class="flex flex-wrap justify-end gap-x-3 gap-y-1">
+                                                <Link
+                                                    :href="route('clients.show', client.id)"
+                                                    class="text-blue-600 hover:text-blue-900"
+                                                >
+                                                    View
+                                                </Link>
+                                                <Link
+                                                    :href="route('clients.edit', client.id)"
+                                                    class="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    @click="deleteClient(client.id)"
+                                                    class="text-red-600 hover:text-red-900"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
