@@ -87,9 +87,8 @@
                                     id="registration_date"
                                     v-model="form.registration_date"
                                     type="date"
-                                    class="mt-1 block w-full"
-                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
-                                    :readonly="!canEditDates"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 text-gray-600"
+                                    readonly
                                     required
                                 />
                                 <InputError :message="form.errors.registration_date" class="mt-2" />
@@ -103,15 +102,15 @@
                                     v-model="form.expiry_date"
                                     type="date"
                                     class="mt-1 block w-full"
-                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
-                                    :readonly="!canEditDates"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.expiry_date" class="mt-2" />
                             </div>
 
-                            <p v-if="!canEditDates" class="md:col-span-2 text-sm text-amber-700">
-                                Service dates are locked. They update from an approved, paid bill; only an approver can override them here.
+                            <p class="md:col-span-2 text-sm text-amber-700">
+                                Registration date is fixed after creation. Expiry updates from an approved, paid bill<span v-if="canEditRenewal">, or can be overridden by an approver</span>.
                             </p>
 
                             <!-- Price -->
@@ -202,7 +201,7 @@ const props = defineProps({
     domain: Object,
     clients: Array,
     providers: Array,
-    canEditDates: Boolean,
+    canEditRenewal: Boolean,
 });
 
 const form = useForm({

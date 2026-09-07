@@ -88,10 +88,16 @@
                                     v-model="form.renewal_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.renewal_date" class="mt-2" />
                             </div>
+
+                            <p class="md:col-span-2 text-sm text-gray-500">
+                                Renewal defaults to one year after the start date<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
+                            </p>
 
                             <!-- Price -->
                             <div>
@@ -214,20 +220,23 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { ref } from 'vue';
+import { addOneYear } from '@/utils/servicePeriod.js';
+import { watch } from 'vue';
 
 const props = defineProps({
     domains: Array,
     providers: Array,
+    canEditRenewal: Boolean,
 });
 
+const defaultStartDate = new Date().toISOString().split('T')[0];
 const form = useForm({
     domain_id: '',
     provider: '',
     provider_id: null,
     package_name: '',
-    start_date: new Date().toISOString().split('T')[0],
-    renewal_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year from now
+    start_date: defaultStartDate,
+    renewal_date: addOneYear(defaultStartDate),
     status: 'active',
     payment_status: 'unpaid',
     price: '',
@@ -237,7 +246,11 @@ const form = useForm({
     control_panel_url: '',
 });
 
+watch(() => form.start_date, (date) => {
+    form.renewal_date = addOneYear(date);
+});
+
 const submit = () => {
     form.post(route('hosting-services.store'));
 };
-</script> 
+</script>

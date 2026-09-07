@@ -192,12 +192,17 @@ class Bill extends Model
                 'hosting' => 'renewal_date',
             };
 
-            $service->update([
-                $dateField => $bill->service_renewal_date,
+            $serviceUpdates = ['payment_status' => 'paid'];
+            $currentRenewal = $service->{$dateField};
+
+            // Stale bills may be approved out of order; renewal dates must never move backwards.
+            if (! $currentRenewal || $bill->service_renewal_date->gte($currentRenewal)) {
+                $serviceUpdates[$dateField] = $bill->service_renewal_date;
                 // This represents the date through which the service was most recently billed.
-                'last_billing_date' => $bill->service_renewal_date,
-                'payment_status' => 'paid',
-            ]);
+                $serviceUpdates['last_billing_date'] = $bill->service_renewal_date;
+            }
+
+            $service->update($serviceUpdates);
 
             $bill->forceFill(['service_renewed_at' => now()])->saveQuietly();
             $this->service_renewed_at = $bill->service_renewed_at;

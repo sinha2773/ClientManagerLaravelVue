@@ -7,6 +7,7 @@ use App\Models\Domain;
 use App\Models\HostingService;
 use App\Models\Provider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class HostingServiceController extends Controller
@@ -78,23 +79,23 @@ class HostingServiceController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('HostingServices/Create', [
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'nullable|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'package_name' => 'required|string|max:255',
             'start_date' => 'required|date',
-            'renewal_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partially_paid',
@@ -102,7 +103,18 @@ class HostingServiceController extends Controller
             'control_panel_url' => 'nullable|url|max:255',
             'username' => 'required|string|max:255',
             'password' => 'required|string|max:255',
-        ]);
+        ];
+        $rules['renewal_date'] = $request->user()->canApproveBills()
+            ? 'required|date|after:start_date'
+            : 'nullable|date';
+
+        $validated = $request->validate($rules);
+
+        if (! $request->user()->canApproveBills()) {
+            $validated['renewal_date'] = Carbon::parse($validated['start_date'])
+                ->addYearNoOverflow()
+                ->toDateString();
+        }
 
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
@@ -138,7 +150,7 @@ class HostingServiceController extends Controller
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
-            'canEditDates' => $request->user()->canApproveBills(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
@@ -159,8 +171,7 @@ class HostingServiceController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['start_date'] = 'required|date';
-            $rules['renewal_date'] = 'required|date|after:start_date';
+            $rules['renewal_date'] = 'required|date|after:'.$hostingService->start_date->toDateString();
         }
 
         $validated = $request->validate($rules);

@@ -92,10 +92,16 @@
                                     v-model="form.expiry_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.expiry_date" class="mt-2" />
                             </div>
+
+                            <p class="md:col-span-2 text-sm text-gray-500">
+                                Expiry defaults to one year after the issue date<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
+                            </p>
 
                             <!-- Price -->
                             <div>
@@ -178,27 +184,34 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { ref } from 'vue';
+import { addOneYear } from '@/utils/servicePeriod.js';
+import { watch } from 'vue';
 
 const props = defineProps({
     domains: Array,
     providers: Array,
+    canEditRenewal: Boolean,
 });
 
+const defaultIssueDate = new Date().toISOString().split('T')[0];
 const form = useForm({
     domain_id: '',
     provider: '',
     provider_id: null,
     type: '',
-    issue_date: new Date().toISOString().split('T')[0],
-    expiry_date: new Date().toISOString().split('T')[0],
+    issue_date: defaultIssueDate,
+    expiry_date: addOneYear(defaultIssueDate),
     status: 'active',
     price: '',
     payment_status: 'unpaid',
     auto_renew: false,
 });
 
+watch(() => form.issue_date, (date) => {
+    form.expiry_date = addOneYear(date);
+});
+
 const submit = () => {
     form.post(route('ssl-certificates.store'));
 };
-</script> 
+</script>

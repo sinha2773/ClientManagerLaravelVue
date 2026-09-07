@@ -7,6 +7,7 @@ use App\Models\Domain;
 use App\Models\Provider;
 use App\Models\SslCertificate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class SslCertificateController extends Controller
@@ -84,28 +85,39 @@ class SslCertificateController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('SslCertificates/Create', [
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'nullable|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'type' => 'required|string|max:255',
             'issue_date' => 'required|date',
-            'expiry_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partially_paid',
             'auto_renew' => 'boolean',
-        ]);
+        ];
+        $rules['expiry_date'] = $request->user()->canApproveBills()
+            ? 'required|date|after:issue_date'
+            : 'nullable|date';
+
+        $validated = $request->validate($rules);
+
+        if (! $request->user()->canApproveBills()) {
+            $validated['expiry_date'] = Carbon::parse($validated['issue_date'])
+                ->addYearNoOverflow()
+                ->toDateString();
+        }
 
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
@@ -138,7 +150,7 @@ class SslCertificateController extends Controller
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
-            'canEditDates' => $request->user()->canApproveBills(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
@@ -156,8 +168,7 @@ class SslCertificateController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['issue_date'] = 'required|date';
-            $rules['expiry_date'] = 'required|date|after:issue_date';
+            $rules['expiry_date'] = 'required|date|after:'.$sslCertificate->issue_date->toDateString();
         }
 
         $validated = $request->validate($rules);

@@ -81,7 +81,7 @@
                         >
                             <h3 class="font-medium text-gray-900">Renewal Period</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                The start date is locked to the service billing history. Adjust the renewal date if this bill covers a different period.
+                                The start date is locked to the service billing history. Renewal can only be manually changed by an approver.
                             </p>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
@@ -102,7 +102,9 @@
                                         v-model="form.service_renewal_date"
                                         type="date"
                                         class="mt-1 block w-full"
+                                        :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
                                         :disabled="!form.service_id"
+                                        :readonly="!canEditRenewal"
                                         required
                                     />
                                     <InputError :message="form.errors.service_renewal_date" class="mt-2" />
@@ -346,6 +348,7 @@ const props = defineProps({
     hostingServices: Array,
     sslCertificates: Array,
     academicYears: Array,
+    canEditRenewal: Boolean,
 })
 
 const form = useForm({

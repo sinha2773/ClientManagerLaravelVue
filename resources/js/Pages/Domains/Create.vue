@@ -101,10 +101,16 @@
                                     v-model="form.expiry_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.expiry_date" class="mt-2" />
                             </div>
+
+                            <p class="md:col-span-2 text-sm text-gray-500">
+                                Expiry defaults to one year after registration<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
+                            </p>
 
                             <!-- Price -->
                             <div>
@@ -188,27 +194,34 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { ref } from 'vue';
+import { addOneYear } from '@/utils/servicePeriod.js';
+import { watch } from 'vue';
 
 const props = defineProps({
     clients: Array,
     providers: Array,
+    canEditRenewal: Boolean,
 });
 
+const defaultRegistrationDate = new Date().toISOString().split('T')[0];
 const form = useForm({
     client_id: '',
     name: '',
     provider_id: null,
     registrar: '',
-    registration_date: new Date().toISOString().split('T')[0],
-    expiry_date: '',
+    registration_date: defaultRegistrationDate,
+    expiry_date: addOneYear(defaultRegistrationDate),
     auto_renew: false,
     status: 'active',
     price: '',
     payment_status: 'unpaid',
 });
 
+watch(() => form.registration_date, (date) => {
+    form.expiry_date = addOneYear(date);
+});
+
 const submit = () => {
     form.post(route('domains.store'));
 };
-</script> 
+</script>

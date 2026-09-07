@@ -56,7 +56,7 @@ class BillCreationTest extends TestCase
             'service_type' => 'domain',
             'service_id' => $domain->id,
             'service_started_date' => '1999-01-01',
-            'service_renewal_date' => now()->addYears(2)->toDateString(),
+            'service_renewal_date' => '2099-12-31',
             'description' => 'Domain renewal',
             'academic_year' => '2026',
             'amount' => 2500,
@@ -71,6 +71,85 @@ class BillCreationTest extends TestCase
         $this->assertSame($client->id, $bill->client_id);
         $this->assertSame('domain', $bill->service_type);
         $this->assertSame($domain->expiry_date->toDateString(), $bill->service_started_date->toDateString());
+        $this->assertSame(
+            $domain->expiry_date->copy()->addYearNoOverflow()->toDateString(),
+            $bill->service_renewal_date->toDateString(),
+        );
+    }
+
+    public function test_approver_can_set_a_custom_bill_renewal_date(): void
+    {
+        $approver = User::factory()->create([
+            'user_type' => 'approver',
+            'is_active' => true,
+        ]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'custom-renewal.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($approver)->post(route('bills.store'), [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'service_started_date' => '1999-01-01',
+            'service_renewal_date' => '2027-09-15',
+            'description' => 'Custom renewal period',
+            'academic_year' => '2026',
+            'amount' => 2500,
+            'due_date' => now()->addMonth()->toDateString(),
+        ])->assertRedirect();
+
+        $bill = Bill::sole();
+        $this->assertSame('2026-01-01', $bill->service_started_date->toDateString());
+        $this->assertSame('2027-09-15', $bill->service_renewal_date->toDateString());
+    }
+
+    public function test_account_manager_cannot_override_an_existing_bill_renewal_date(): void
+    {
+        $manager = $this->createAccountManager();
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'protected-renewal.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $bill = $this->createBill($manager, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2027-09-15',
+        ]);
+
+        $this->actingAs($manager)->patch(route('bills.update', $bill), [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'service_started_date' => '1999-01-01',
+            'service_renewal_date' => '2099-12-31',
+            'description' => 'Updated description',
+            'academic_year' => '2026',
+            'amount' => 2500,
+            'due_date' => now()->addMonth()->toDateString(),
+        ])->assertRedirect(route('bills.show', $bill));
+
+        $bill->refresh();
+        $this->assertSame('2026-01-01', $bill->service_started_date->toDateString());
+        $this->assertSame('2027-09-15', $bill->service_renewal_date->toDateString());
+        $this->assertSame('Updated description', $bill->description);
     }
 
     public function test_paid_and_approved_bill_renews_service_once_using_bill_renewal_date(): void
@@ -113,6 +192,43 @@ class BillCreationTest extends TestCase
 
         $this->assertSame('2027-09-15', $domain->fresh()->expiry_date->toDateString());
         $this->assertSame($renewedAt, $bill->fresh()->service_renewed_at->toISOString());
+    }
+
+    public function test_approving_a_stale_bill_never_moves_service_renewal_backwards(): void
+    {
+        $manager = $this->createAccountManager();
+        $approver = User::factory()->create([
+            'user_type' => 'approver',
+            'is_active' => true,
+        ]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'monotonic.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $staleBill = $this->createBill($manager, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2027-01-01',
+        ]);
+        $domain->update([
+            'expiry_date' => '2028-01-01',
+            'last_billing_date' => '2028-01-01',
+        ]);
+
+        $this->actingAs($approver)->patch(route('bills.approve', $staleBill))->assertRedirect();
+
+        $domain->refresh();
+        $this->assertSame('2028-01-01', $domain->expiry_date->toDateString());
+        $this->assertSame('2028-01-01', $domain->last_billing_date->toDateString());
+        $this->assertNotNull($staleBill->fresh()->service_renewed_at);
     }
 
     public function test_payment_before_approval_does_not_renew_service(): void

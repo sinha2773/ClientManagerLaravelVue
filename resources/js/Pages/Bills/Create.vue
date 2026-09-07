@@ -114,7 +114,7 @@
                         >
                             <h3 class="font-medium text-gray-900">Renewal Period</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                The start date comes from the selected service. The proposed renewal date defaults to one year later.
+                                The start date comes from the selected service. Renewal defaults to one year later<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
                             </p>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
@@ -135,7 +135,9 @@
                                         v-model="form.service_renewal_date"
                                         type="date"
                                         class="mt-1 block w-full"
+                                        :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
                                         :disabled="!form.service_id"
+                                        :readonly="!canEditRenewal"
                                         required
                                     />
                                     <InputError :message="form.errors.service_renewal_date" class="mt-2" />
@@ -379,6 +381,7 @@ const props = defineProps({
     hostingServices: Array,
     sslCertificates: Array,
     academicYears: Array,
+    canEditRenewal: Boolean,
     prefill: {
         type: Object,
         default: () => ({ client_id: null, service_type: null, service_id: null }),

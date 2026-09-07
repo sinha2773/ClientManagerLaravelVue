@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Domain;
 use App\Models\Provider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class DomainController extends Controller
@@ -76,28 +77,39 @@ class DomainController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('Domains/Create', [
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'client_id' => 'required|exists:clients,id',
             'name' => 'required|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'registrar' => 'required|string|max:255',
             'registration_date' => 'required|date',
-            'expiry_date' => 'required|date|after:registration_date',
             'auto_renew' => 'boolean',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partial',
-        ]);
+        ];
+        $rules['expiry_date'] = $request->user()->canApproveBills()
+            ? 'required|date|after:registration_date'
+            : 'nullable|date';
+
+        $validated = $request->validate($rules);
+
+        if (! $request->user()->canApproveBills()) {
+            $validated['expiry_date'] = Carbon::parse($validated['registration_date'])
+                ->addYearNoOverflow()
+                ->toDateString();
+        }
 
         Domain::create($validated);
 
@@ -120,7 +132,7 @@ class DomainController extends Controller
             'domain' => $domain,
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
-            'canEditDates' => $request->user()->canApproveBills(),
+            'canEditRenewal' => $request->user()->canApproveBills(),
         ]);
     }
 
@@ -138,8 +150,7 @@ class DomainController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['registration_date'] = 'required|date';
-            $rules['expiry_date'] = 'required|date|after:registration_date';
+            $rules['expiry_date'] = 'required|date|after:'.$domain->registration_date->toDateString();
         }
 
         $validated = $request->validate($rules);

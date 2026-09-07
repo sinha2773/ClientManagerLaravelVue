@@ -96,6 +96,7 @@ class BillController extends Controller
             'hostingServices' => $hostingServices,
             'sslCertificates' => $sslCertificates,
             'academicYears' => AcademicYear::options(),
+            'canEditRenewal' => $user->canApproveBills(),
             'prefill' => [
                 'client_id' => $request->query('client_id'),
                 'service_type' => $request->query('service_type'),
@@ -120,7 +121,11 @@ class BillController extends Controller
         // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
         if ($validated['service_type'] !== 'eims_fee') {
             $service = $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
-            $validated = $this->normalizeServicePeriod($validated, $service);
+            $validated = $this->normalizeServicePeriod(
+                $validated,
+                $service,
+                $request->user()->canApproveBills(),
+            );
         } else {
             $validated['service_started_date'] = null;
             $validated['service_renewal_date'] = null;
@@ -196,6 +201,7 @@ class BillController extends Controller
             'hostingServices' => $hostingServices,
             'sslCertificates' => $sslCertificates,
             'academicYears' => AcademicYear::options(),
+            'canEditRenewal' => $user->canApproveBills(),
         ]);
     }
 
@@ -215,13 +221,15 @@ class BillController extends Controller
         // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
         if ($validated['service_type'] !== 'eims_fee') {
             $service = $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
-            $keepExistingStart = $bill->service_type === $validated['service_type']
-                && $bill->service_id === (int) $validated['service_id']
-                && $bill->service_started_date;
+            $sameService = $bill->service_type === $validated['service_type']
+                && $bill->service_id === (int) $validated['service_id'];
+            $keepExistingStart = $sameService && $bill->service_started_date;
             $validated = $this->normalizeServicePeriod(
                 $validated,
                 $service,
+                $request->user()->canApproveBills(),
                 $keepExistingStart ? $bill->service_started_date : null,
+                $sameService ? $bill->service_renewal_date : null,
             );
         } else {
             $validated['service_started_date'] = null;
@@ -456,7 +464,9 @@ class BillController extends Controller
         if ($request->service_type !== 'eims_fee') {
             $rules['service_id'] = 'required|integer';
             $rules['service_started_date'] = 'nullable|date';
-            $rules['service_renewal_date'] = 'required|date';
+            $rules['service_renewal_date'] = $request->user()->canApproveBills()
+                ? 'required|date'
+                : 'nullable|date';
         } else {
             $rules['service_id'] = 'required|integer|exists:domains,id';
             $rules['total_students'] = 'required|integer|min:1';
@@ -479,8 +489,13 @@ class BillController extends Controller
         return $validated;
     }
 
-    private function normalizeServicePeriod(array $validated, Model $service, ?Carbon $existingStart = null): array
-    {
+    private function normalizeServicePeriod(
+        array $validated,
+        Model $service,
+        bool $canEditRenewal,
+        ?Carbon $existingStart = null,
+        ?Carbon $existingRenewal = null,
+    ): array {
         $currentRenewalField = match ($validated['service_type']) {
             'domain', 'ssl_certificate' => 'expiry_date',
             'hosting' => 'renewal_date',
@@ -494,7 +509,9 @@ class BillController extends Controller
             ?? $service->last_billing_date
             ?? $service->{$currentRenewalField}
             ?? $service->{$initialDateField};
-        $renewalDate = Carbon::parse($validated['service_renewal_date']);
+        $renewalDate = $canEditRenewal
+            ? Carbon::parse($validated['service_renewal_date'])
+            : ($existingRenewal?->copy() ?? $startedDate?->copy()->addYearNoOverflow());
 
         if (! $startedDate || $renewalDate->lte($startedDate)) {
             throw \Illuminate\Validation\ValidationException::withMessages([
