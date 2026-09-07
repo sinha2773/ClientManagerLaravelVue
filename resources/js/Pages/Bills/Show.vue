@@ -59,6 +59,12 @@
                                     <dd class="text-right font-medium text-gray-900">{{ formatServiceType(bill.service_type) }}</dd>
                                     <dt class="text-gray-500">Academic Year</dt>
                                     <dd class="text-right font-medium text-gray-900">{{ bill.academic_year || '-' }}</dd>
+                                    <template v-if="bill.service_type !== 'eims_fee'">
+                                        <dt class="text-gray-500">Started Date</dt>
+                                        <dd class="text-right font-medium text-gray-900">{{ formatDate(bill.service_started_date) }}</dd>
+                                        <dt class="text-gray-500">Renewal Date</dt>
+                                        <dd class="text-right font-medium text-gray-900">{{ formatDate(bill.service_renewal_date) }}</dd>
+                                    </template>
                                     <dt class="text-gray-500">Status</dt>
                                     <dd class="text-right font-medium text-gray-900">{{ formatStatus(bill.status) }}</dd>
                                     <dt class="text-gray-500">Payment</dt>
@@ -168,6 +174,14 @@
                                             :class="getServiceTypeClass(bill.service_type)">
                                             {{ formatServiceType(bill.service_type) }}
                                         </span>
+                                    </div>
+                                    <div v-if="bill.service_type !== 'eims_fee'">
+                                        <label class="block text-sm font-medium text-gray-700">Started Date</label>
+                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(bill.service_started_date) }}</p>
+                                    </div>
+                                    <div v-if="bill.service_type !== 'eims_fee'">
+                                        <label class="block text-sm font-medium text-gray-700">Renewal Date</label>
+                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(bill.service_renewal_date) }}</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Status</label>
@@ -531,7 +545,13 @@ const formatStatus = (status) => {
 }
 
 const formatDate = (date) => {
-    return new Date(date).toLocaleDateString()
+    if (!date) {
+        return '-'
+    }
+
+    const parsedDate = new Date(date)
+
+    return Number.isNaN(parsedDate.getTime()) ? '-' : parsedDate.toLocaleDateString()
 }
 
 const formatDateTime = (datetime) => {

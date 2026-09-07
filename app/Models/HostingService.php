@@ -19,6 +19,7 @@ class HostingService extends Model
         'package_name',
         'start_date',
         'renewal_date',
+        'last_billing_date',
         'price',
         'payment_status',
         'status',
@@ -31,6 +32,7 @@ class HostingService extends Model
     protected $casts = [
         'start_date' => 'date',
         'renewal_date' => 'date',
+        'last_billing_date' => 'date',
     ];
 
     public function domain(): BelongsTo
@@ -52,4 +54,4 @@ class HostingService extends Model
     {
         return $this->hasMany(Bill::class, 'service_id')->where('service_type', 'hosting');
     }
-} 
+}

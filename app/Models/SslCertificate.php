@@ -19,6 +19,7 @@ class SslCertificate extends Model
         'type',
         'issue_date',
         'expiry_date',
+        'last_billing_date',
         'status',
         'price',
         'payment_status',
@@ -28,6 +29,7 @@ class SslCertificate extends Model
     protected $casts = [
         'issue_date' => 'date',
         'expiry_date' => 'date',
+        'last_billing_date' => 'date',
         'auto_renew' => 'boolean',
     ];
 
@@ -55,4 +57,4 @@ class SslCertificate extends Model
     {
         return $this->expiry_date->diffInDays(now()) <= 30;
     }
-} 
+}

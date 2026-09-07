@@ -108,6 +108,41 @@
                             <p class="text-yellow-800">No {{ formatServiceType(form.service_type) }} services found for the selected client.</p>
                         </div>
 
+                        <div
+                            v-if="form.service_type && form.service_type !== 'eims_fee'"
+                            class="rounded-lg border border-indigo-100 bg-indigo-50/60 p-4"
+                        >
+                            <h3 class="font-medium text-gray-900">Renewal Period</h3>
+                            <p class="mt-1 text-sm text-gray-600">
+                                The start date comes from the selected service. The proposed renewal date defaults to one year later.
+                            </p>
+                            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <InputLabel for="service_started_date" value="Started Date" />
+                                    <TextInput
+                                        id="service_started_date"
+                                        v-model="form.service_started_date"
+                                        type="date"
+                                        class="mt-1 block w-full bg-gray-100"
+                                        readonly
+                                    />
+                                    <InputError :message="form.errors.service_started_date" class="mt-2" />
+                                </div>
+                                <div>
+                                    <InputLabel for="service_renewal_date" value="Renewal Date" />
+                                    <TextInput
+                                        id="service_renewal_date"
+                                        v-model="form.service_renewal_date"
+                                        type="date"
+                                        class="mt-1 block w-full"
+                                        :disabled="!form.service_id"
+                                        required
+                                    />
+                                    <InputError :message="form.errors.service_renewal_date" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Description -->
                         <div>
                             <InputLabel for="description" value="Description" />
@@ -336,6 +371,7 @@ import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
 import { CLIENT_TYPES, formatClientType } from '@/constants/clientTypes'
 import { formatCurrency } from '@/utils/currency.js'
+import { addOneYear, servicePeriodStart } from '@/utils/servicePeriod.js'
 
 const props = defineProps({
     clients: Array,
@@ -353,6 +389,8 @@ const form = useForm({
     client_id: '',
     service_type: '',
     service_id: '',
+    service_started_date: '',
+    service_renewal_date: '',
     description: '',
     academic_year: String(new Date().getFullYear()),
     amount: '',
@@ -457,6 +495,8 @@ const hideClientDropdown = () => {
 const updateServiceOptions = () => {
     form.service_id = ''
     form.amount = ''
+    form.service_started_date = ''
+    form.service_renewal_date = ''
     
     if (!form.client_id || !form.service_type) {
         availableServices.value = []
@@ -492,7 +532,12 @@ const updateAmountFromService = () => {
         }
         if (selectedService) {
             form.description = `Renewal for ${getServiceDisplayName(selectedService)}`
+            form.service_started_date = servicePeriodStart(selectedService, form.service_type)
+            form.service_renewal_date = addOneYear(form.service_started_date)
         }
+    } else {
+        form.service_started_date = ''
+        form.service_renewal_date = ''
     }
 }
 

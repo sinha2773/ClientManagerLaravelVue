@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .responsive-data-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .responsive-data-table th,
+    .responsive-data-table td {
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 767px) {
+    .responsive-data-table,
+    .responsive-data-table tbody,
+    .responsive-data-table tr,
+    .responsive-data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .responsive-data-table thead {
+        display: none;
+    }
+
+    .responsive-data-table colgroup {
+        display: none;
+    }
+
+    .responsive-data-table tbody {
+        border: 0;
+    }
+
+    .responsive-data-table tbody > :not([hidden]) ~ :not([hidden]) {
+        border-top-width: 0;
+    }
+
+    .responsive-data-table tbody tr {
+        border-bottom: 1px solid rgb(229 231 235);
+        padding: 0.5rem 0;
+    }
+
+    .responsive-data-table tbody tr:last-child {
+        border-bottom: 0;
+    }
+
+    .responsive-data-table td {
+        min-height: 2.5rem;
+        padding: 0.5rem 0.75rem 0.5rem 42%;
+        position: relative;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .responsive-data-table td::before {
+        color: rgb(107 114 128);
+        content: attr(data-label);
+        font-size: 0.7rem;
+        font-weight: 600;
+        left: 0.75rem;
+        letter-spacing: 0.05em;
+        line-height: 1.25rem;
+        position: absolute;
+        text-transform: uppercase;
+        top: 0.5rem;
+        width: 34%;
+    }
+}

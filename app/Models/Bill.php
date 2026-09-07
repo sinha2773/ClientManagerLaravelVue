@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
@@ -15,6 +16,8 @@ class Bill extends Model
         'client_id',
         'service_type',
         'service_id',
+        'service_started_date',
+        'service_renewal_date',
         'description',
         'academic_year',
         'amount',
@@ -44,6 +47,9 @@ class Bill extends Model
         'due_date' => 'date',
         'paid_date' => 'date',
         'approved_at' => 'datetime',
+        'service_started_date' => 'date',
+        'service_renewal_date' => 'date',
+        'service_renewed_at' => 'datetime',
         'billing_months' => 'array',
         'student_grand_totals' => 'array',
         'student_summary' => 'array',
@@ -148,32 +154,54 @@ class Bill extends Model
 
     public function renewService(): void
     {
-        if ($this->service_type === 'eims_fee') {
+        if (
+            $this->service_type === 'eims_fee'
+            || $this->payment_status !== 'paid'
+            || ! $this->approved_by
+            || $this->service_renewed_at
+        ) {
             return;
         }
 
-        $service = match ($this->service_type) {
-            'domain' => Domain::find($this->service_id),
-            'hosting' => HostingService::find($this->service_id),
-            'ssl_certificate' => SslCertificate::find($this->service_id),
-            default => null,
-        };
+        DB::transaction(function (): void {
+            $bill = self::query()->lockForUpdate()->find($this->id);
 
-        if (! $service) {
-            return;
-        }
+            if (
+                ! $bill
+                || $bill->payment_status !== 'paid'
+                || ! $bill->approved_by
+                || $bill->service_renewed_at
+                || ! $bill->service_renewal_date
+            ) {
+                return;
+            }
 
-        $dateField = match ($this->service_type) {
-            'domain' => 'expiry_date',
-            'hosting' => 'renewal_date',
-            'ssl_certificate' => 'expiry_date',
-            default => null,
-        };
+            $service = match ($bill->service_type) {
+                'domain' => Domain::query()->lockForUpdate()->find($bill->service_id),
+                'hosting' => HostingService::query()->lockForUpdate()->find($bill->service_id),
+                'ssl_certificate' => SslCertificate::query()->lockForUpdate()->find($bill->service_id),
+                default => null,
+            };
 
-        if ($dateField) {
-            $service->update([$dateField => $service->$dateField->addYear()]);
-            $service->update(['payment_status' => 'paid']);
-        }
+            if (! $service) {
+                return;
+            }
+
+            $dateField = match ($bill->service_type) {
+                'domain', 'ssl_certificate' => 'expiry_date',
+                'hosting' => 'renewal_date',
+            };
+
+            $service->update([
+                $dateField => $bill->service_renewal_date,
+                // This represents the date through which the service was most recently billed.
+                'last_billing_date' => $bill->service_renewal_date,
+                'payment_status' => 'paid',
+            ]);
+
+            $bill->forceFill(['service_renewed_at' => now()])->saveQuietly();
+            $this->service_renewed_at = $bill->service_renewed_at;
+        });
     }
 
     /**

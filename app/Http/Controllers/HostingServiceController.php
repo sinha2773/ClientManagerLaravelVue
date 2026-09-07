@@ -107,7 +107,7 @@ class HostingServiceController extends Controller
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
 
-        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+        if (empty($validated['provider']) && ! empty($validated['provider_id'])) {
             $validated['provider'] = Provider::find($validated['provider_id'])->name;
         }
 
@@ -117,7 +117,7 @@ class HostingServiceController extends Controller
             ->with('message', 'Hosting service created successfully.');
     }
 
-    public function edit(HostingService $hostingService)
+    public function edit(Request $request, HostingService $hostingService)
     {
         return Inertia::render('HostingServices/Edit', [
             'hostingService' => [
@@ -138,18 +138,17 @@ class HostingServiceController extends Controller
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditDates' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function update(Request $request, HostingService $hostingService)
     {
-        $validated = $request->validate([
+        $rules = [
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'nullable|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'package_name' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'renewal_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partially_paid',
@@ -157,12 +156,19 @@ class HostingServiceController extends Controller
             'control_panel_url' => 'nullable|url|max:255',
             'username' => 'required|string|max:255',
             'password' => 'required|string|max:255',
-        ]);
+        ];
+
+        if ($request->user()->canApproveBills()) {
+            $rules['start_date'] = 'required|date';
+            $rules['renewal_date'] = 'required|date|after:start_date';
+        }
+
+        $validated = $request->validate($rules);
 
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
 
-        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+        if (empty($validated['provider']) && ! empty($validated['provider_id'])) {
             $validated['provider'] = Provider::find($validated['provider_id'])->name;
         }
 

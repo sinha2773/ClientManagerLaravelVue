@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Bill;
 use App\Models\Client;
 use App\Models\Domain;
+use App\Models\HostingService;
+use App\Models\SslCertificate;
 use App\Models\User;
 use App\Support\AcademicYear;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -53,6 +55,8 @@ class BillCreationTest extends TestCase
             'client_id' => $client->id,
             'service_type' => 'domain',
             'service_id' => $domain->id,
+            'service_started_date' => '1999-01-01',
+            'service_renewal_date' => now()->addYears(2)->toDateString(),
             'description' => 'Domain renewal',
             'academic_year' => '2026',
             'amount' => 2500,
@@ -66,6 +70,144 @@ class BillCreationTest extends TestCase
         $this->assertSame('2026', $bill->academic_year);
         $this->assertSame($client->id, $bill->client_id);
         $this->assertSame('domain', $bill->service_type);
+        $this->assertSame($domain->expiry_date->toDateString(), $bill->service_started_date->toDateString());
+    }
+
+    public function test_paid_and_approved_bill_renews_service_once_using_bill_renewal_date(): void
+    {
+        $manager = $this->createAccountManager();
+        $approver = User::factory()->create([
+            'user_type' => 'approver',
+            'is_active' => true,
+        ]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'renew.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-06-30',
+            'expiry_date' => '2026-06-30',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $bill = $this->createBill($manager, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-06-30',
+            'service_renewal_date' => '2027-09-15',
+        ]);
+
+        $response = $this->actingAs($approver)->patch(route('bills.approve', $bill));
+
+        $response->assertRedirect();
+        $domain->refresh();
+        $bill->refresh();
+        $this->assertSame('2027-09-15', $domain->expiry_date->toDateString());
+        $this->assertSame('2027-09-15', $domain->last_billing_date->toDateString());
+        $this->assertSame('paid', $domain->payment_status);
+        $this->assertNotNull($bill->service_renewed_at);
+
+        $renewedAt = $bill->service_renewed_at->toISOString();
+        $bill->renewService();
+
+        $this->assertSame('2027-09-15', $domain->fresh()->expiry_date->toDateString());
+        $this->assertSame($renewedAt, $bill->fresh()->service_renewed_at->toISOString());
+    }
+
+    public function test_payment_before_approval_does_not_renew_service(): void
+    {
+        $manager = $this->createAccountManager();
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'pending.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-06-30',
+            'expiry_date' => '2026-06-30',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $bill = $this->createBill($manager, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-06-30',
+            'service_renewal_date' => '2027-06-30',
+        ]);
+
+        $this->actingAs($manager)->patch(route('bills.update-payment', $bill), [
+            'paid_amount' => 2500,
+        ])->assertRedirect();
+
+        $this->assertSame('2026-06-30', $domain->fresh()->expiry_date->toDateString());
+        $this->assertNull($bill->fresh()->service_renewed_at);
+    }
+
+    public function test_approval_updates_hosting_and_ssl_renewal_dates(): void
+    {
+        $manager = $this->createAccountManager();
+        $approver = User::factory()->create([
+            'user_type' => 'approver',
+            'is_active' => true,
+        ]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'services.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $hosting = HostingService::create([
+            'client_id' => $client->id,
+            'domain_id' => $domain->id,
+            'provider' => 'Host',
+            'package_name' => 'Annual',
+            'start_date' => '2025-02-01',
+            'renewal_date' => '2026-02-01',
+            'price' => 2000,
+            'payment_status' => 'unpaid',
+            'status' => 'active',
+            'username' => 'hosting-user',
+            'password' => 'secret',
+        ]);
+        $ssl = SslCertificate::create([
+            'client_id' => $client->id,
+            'domain_id' => $domain->id,
+            'provider' => 'Certificate Provider',
+            'type' => 'DV',
+            'issue_date' => '2025-03-01',
+            'expiry_date' => '2026-03-01',
+            'price' => 500,
+            'payment_status' => 'unpaid',
+            'status' => 'active',
+            'auto_renew' => false,
+        ]);
+        $hostingBill = $this->createBill($manager, $client, [
+            'service_type' => 'hosting',
+            'service_id' => $hosting->id,
+            'service_started_date' => '2026-02-01',
+            'service_renewal_date' => '2027-04-01',
+        ]);
+        $sslBill = $this->createBill($manager, $client, [
+            'service_type' => 'ssl_certificate',
+            'service_id' => $ssl->id,
+            'service_started_date' => '2026-03-01',
+            'service_renewal_date' => '2027-05-01',
+        ]);
+
+        $this->actingAs($approver)->patch(route('bills.approve', $hostingBill))->assertRedirect();
+        $this->actingAs($approver)->patch(route('bills.approve', $sslBill))->assertRedirect();
+
+        $this->assertSame('2027-04-01', $hosting->fresh()->renewal_date->toDateString());
+        $this->assertSame('2027-04-01', $hosting->fresh()->last_billing_date->toDateString());
+        $this->assertSame('2027-05-01', $ssl->fresh()->expiry_date->toDateString());
+        $this->assertSame('2027-05-01', $ssl->fresh()->last_billing_date->toDateString());
     }
 
     public function test_academic_year_is_required_when_creating_a_bill(): void

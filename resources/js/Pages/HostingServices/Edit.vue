@@ -75,10 +75,16 @@
                                     v-model="form.start_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
+                                    :readonly="!canEditDates"
                                     required
                                 />
                                 <InputError :message="form.errors.start_date" class="mt-2" />
                             </div>
+
+                            <p v-if="!canEditDates" class="md:col-span-2 text-sm text-amber-700">
+                                Service dates are locked. They update from an approved, paid bill; only an approver can override them here.
+                            </p>
 
                             <!-- Renewal Date -->
                             <div>
@@ -88,6 +94,8 @@
                                     v-model="form.renewal_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
+                                    :readonly="!canEditDates"
                                     required
                                 />
                                 <InputError :message="form.errors.renewal_date" class="mt-2" />
@@ -219,6 +227,7 @@ const props = defineProps({
     hostingService: Object,
     domains: Array,
     providers: Array,
+    canEditDates: Boolean,
 });
 
 const form = useForm({
@@ -240,4 +249,4 @@ const form = useForm({
 const submit = () => {
     form.patch(route('hosting-services.update', props.hostingService.id));
 };
-</script> 
+</script>

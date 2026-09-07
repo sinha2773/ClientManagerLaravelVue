@@ -88,6 +88,8 @@
                                     v-model="form.registration_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
+                                    :readonly="!canEditDates"
                                     required
                                 />
                                 <InputError :message="form.errors.registration_date" class="mt-2" />
@@ -101,10 +103,16 @@
                                     v-model="form.expiry_date"
                                     type="date"
                                     class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditDates }"
+                                    :readonly="!canEditDates"
                                     required
                                 />
                                 <InputError :message="form.errors.expiry_date" class="mt-2" />
                             </div>
+
+                            <p v-if="!canEditDates" class="md:col-span-2 text-sm text-amber-700">
+                                Service dates are locked. They update from an approved, paid bill; only an approver can override them here.
+                            </p>
 
                             <!-- Price -->
                             <div>
@@ -194,6 +202,7 @@ const props = defineProps({
     domain: Object,
     clients: Array,
     providers: Array,
+    canEditDates: Boolean,
 });
 
 const form = useForm({
@@ -212,4 +221,4 @@ const form = useForm({
 const submit = () => {
     form.put(route('domains.update', props.domain.id));
 };
-</script> 
+</script>

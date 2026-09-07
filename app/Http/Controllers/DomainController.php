@@ -114,29 +114,35 @@ class DomainController extends Controller
         ]);
     }
 
-    public function edit(Domain $domain)
+    public function edit(Request $request, Domain $domain)
     {
         return Inertia::render('Domains/Edit', [
             'domain' => $domain,
             'clients' => Client::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditDates' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function update(Request $request, Domain $domain)
     {
-        $validated = $request->validate([
+        $rules = [
             'client_id' => 'required|exists:clients,id',
             'name' => 'required|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'registrar' => 'required|string|max:255',
-            'registration_date' => 'required|date',
-            'expiry_date' => 'required|date|after:registration_date',
             'auto_renew' => 'boolean',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partial',
-        ]);
+        ];
+
+        if ($request->user()->canApproveBills()) {
+            $rules['registration_date'] = 'required|date';
+            $rules['expiry_date'] = 'required|date|after:registration_date';
+        }
+
+        $validated = $request->validate($rules);
 
         $domain->update($validated);
 

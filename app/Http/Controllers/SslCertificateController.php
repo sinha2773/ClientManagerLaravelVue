@@ -110,7 +110,7 @@ class SslCertificateController extends Controller
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
 
-        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+        if (empty($validated['provider']) && ! empty($validated['provider_id'])) {
             $validated['provider'] = Provider::find($validated['provider_id'])->name;
         }
 
@@ -120,7 +120,7 @@ class SslCertificateController extends Controller
             ->with('message', 'SSL certificate created successfully.');
     }
 
-    public function edit(SslCertificate $sslCertificate)
+    public function edit(Request $request, SslCertificate $sslCertificate)
     {
         return Inertia::render('SslCertificates/Edit', [
             'sslCertificate' => [
@@ -138,28 +138,34 @@ class SslCertificateController extends Controller
             ],
             'domains' => Domain::select('id', 'name')->orderBy('name')->get(),
             'providers' => Provider::orderBy('name')->get(),
+            'canEditDates' => $request->user()->canApproveBills(),
         ]);
     }
 
     public function update(Request $request, SslCertificate $sslCertificate)
     {
-        $validated = $request->validate([
+        $rules = [
             'domain_id' => 'required|exists:domains,id',
             'provider' => 'nullable|string|max:255',
             'provider_id' => 'nullable|exists:providers,id',
             'type' => 'required|string|max:255',
-            'issue_date' => 'required|date',
-            'expiry_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'price' => 'required|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid,partially_paid',
             'auto_renew' => 'boolean',
-        ]);
+        ];
+
+        if ($request->user()->canApproveBills()) {
+            $rules['issue_date'] = 'required|date';
+            $rules['expiry_date'] = 'required|date|after:issue_date';
+        }
+
+        $validated = $request->validate($rules);
 
         $domain = Domain::findOrFail($validated['domain_id']);
         $validated['client_id'] = $domain->client_id;
 
-        if (empty($validated['provider']) && !empty($validated['provider_id'])) {
+        if (empty($validated['provider']) && ! empty($validated['provider_id'])) {
             $validated['provider'] = Provider::find($validated['provider_id'])->name;
         }
 

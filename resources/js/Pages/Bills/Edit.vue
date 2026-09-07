@@ -75,6 +75,41 @@
                             <p class="text-yellow-800">No {{ formatServiceType(form.service_type) }} services found for the selected client.</p>
                         </div>
 
+                        <div
+                            v-if="form.service_type && form.service_type !== 'eims_fee'"
+                            class="rounded-lg border border-indigo-100 bg-indigo-50/60 p-4"
+                        >
+                            <h3 class="font-medium text-gray-900">Renewal Period</h3>
+                            <p class="mt-1 text-sm text-gray-600">
+                                The start date is locked to the service billing history. Adjust the renewal date if this bill covers a different period.
+                            </p>
+                            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <InputLabel for="service_started_date" value="Started Date" />
+                                    <TextInput
+                                        id="service_started_date"
+                                        v-model="form.service_started_date"
+                                        type="date"
+                                        class="mt-1 block w-full bg-gray-100"
+                                        readonly
+                                    />
+                                    <InputError :message="form.errors.service_started_date" class="mt-2" />
+                                </div>
+                                <div>
+                                    <InputLabel for="service_renewal_date" value="Renewal Date" />
+                                    <TextInput
+                                        id="service_renewal_date"
+                                        v-model="form.service_renewal_date"
+                                        type="date"
+                                        class="mt-1 block w-full"
+                                        :disabled="!form.service_id"
+                                        required
+                                    />
+                                    <InputError :message="form.errors.service_renewal_date" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Description -->
                         <div>
                             <InputLabel for="description" value="Description" />
@@ -302,6 +337,7 @@ import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
 import { formatCurrency } from '@/utils/currency.js'
+import { addOneYear, servicePeriodStart, toDateInput } from '@/utils/servicePeriod.js'
 
 const props = defineProps({
     bill: Object,
@@ -316,6 +352,8 @@ const form = useForm({
     client_id: props.bill.client_id,
     service_type: props.bill.service_type,
     service_id: props.bill.service_id,
+    service_started_date: toDateInput(props.bill.service_started_date),
+    service_renewal_date: toDateInput(props.bill.service_renewal_date),
     description: props.bill.description,
     academic_year: props.bill.academic_year || String(new Date().getFullYear()),
     amount: props.bill.amount,
@@ -372,6 +410,7 @@ const filterServices = () => {
     if (form.client_id !== props.bill.client_id) {
         form.service_id = ''
         form.service_type = ''
+        clearServicePeriod()
     }
     updateServiceOptions()
 }
@@ -380,6 +419,7 @@ const updateServiceOptions = () => {
     if (form.service_type !== props.bill.service_type) {
         form.service_id = ''
         form.amount = ''
+        clearServicePeriod()
     }
     
     if (!form.client_id || !form.service_type) {
@@ -401,6 +441,7 @@ const updateServiceOptions = () => {
             break
         case 'eims_fee':
             availableServices.value = []
+            clearServicePeriod()
             break
         default:
             availableServices.value = []
@@ -413,6 +454,29 @@ const updateAmountFromService = () => {
         if (selectedService && selectedService.price) {
             form.amount = Number(selectedService.price).toFixed(2)
         }
+        syncServicePeriod(selectedService, true)
+    } else {
+        clearServicePeriod()
+    }
+}
+
+const clearServicePeriod = () => {
+    form.service_started_date = ''
+    form.service_renewal_date = ''
+}
+
+const syncServicePeriod = (service, overwriteRenewal = false) => {
+    if (!service || form.service_type === 'eims_fee') {
+        clearServicePeriod()
+        return
+    }
+
+    if (!form.service_started_date || overwriteRenewal) {
+        form.service_started_date = servicePeriodStart(service, form.service_type)
+    }
+
+    if (!form.service_renewal_date || overwriteRenewal) {
+        form.service_renewal_date = addOneYear(form.service_started_date)
     }
 }
 
@@ -503,6 +567,8 @@ watch(() => form.client_id, () => {
 onMounted(() => {
     // Initialize available services based on current bill data
     updateServiceOptions()
+    const selectedService = availableServices.value.find(service => service.id == form.service_id)
+    syncServicePeriod(selectedService)
     syncMonthlyFeeFromSelection()
 })
 </script> 

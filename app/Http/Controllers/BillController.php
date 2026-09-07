@@ -8,8 +8,11 @@ use App\Models\Domain;
 use App\Models\HostingService;
 use App\Models\SslCertificate;
 use App\Support\AcademicYear;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -83,9 +86,9 @@ class BillController extends Controller
         }
 
         $clients = Client::select('id', 'name', 'email', 'client_type', 'eims_monthly')->get();
-        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price')->get();
-        $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
-        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
+        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price', 'registration_date', 'expiry_date', 'last_billing_date')->get();
+        $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price', 'start_date', 'renewal_date', 'last_billing_date')->get();
+        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price', 'issue_date', 'expiry_date', 'last_billing_date')->get();
 
         return Inertia::render('Bills/Create', [
             'clients' => $clients,
@@ -116,7 +119,11 @@ class BillController extends Controller
 
         // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
         if ($validated['service_type'] !== 'eims_fee') {
-            $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+            $service = $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+            $validated = $this->normalizeServicePeriod($validated, $service);
+        } else {
+            $validated['service_started_date'] = null;
+            $validated['service_renewal_date'] = null;
         }
 
         $bill = Bill::create([
@@ -178,9 +185,9 @@ class BillController extends Controller
         }
 
         $clients = Client::select('id', 'name', 'email', 'eims_monthly')->get();
-        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price')->get();
-        $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price')->get();
-        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price')->get();
+        $domains = Domain::with('client:id,name,eims_monthly')->select('id', 'name', 'client_id', 'price', 'registration_date', 'expiry_date', 'last_billing_date')->get();
+        $hostingServices = HostingService::with(['client', 'domain'])->select('id', 'package_name', 'client_id', 'domain_id', 'price', 'start_date', 'renewal_date', 'last_billing_date')->get();
+        $sslCertificates = SslCertificate::with(['client', 'domain'])->select('id', 'type', 'provider', 'client_id', 'domain_id', 'price', 'issue_date', 'expiry_date', 'last_billing_date')->get();
 
         return Inertia::render('Bills/Edit', [
             'bill' => $bill,
@@ -207,7 +214,18 @@ class BillController extends Controller
 
         // Validate that the service exists and belongs to the client (only for non-EIMS Fee)
         if ($validated['service_type'] !== 'eims_fee') {
-            $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+            $service = $this->validateService($validated['service_type'], $validated['service_id'], $validated['client_id']);
+            $keepExistingStart = $bill->service_type === $validated['service_type']
+                && $bill->service_id === (int) $validated['service_id']
+                && $bill->service_started_date;
+            $validated = $this->normalizeServicePeriod(
+                $validated,
+                $service,
+                $keepExistingStart ? $bill->service_started_date : null,
+            );
+        } else {
+            $validated['service_started_date'] = null;
+            $validated['service_renewal_date'] = null;
         }
 
         $bill->update($validated);
@@ -246,16 +264,18 @@ class BillController extends Controller
             return back()->with('error', 'Only draft bills can be approved.');
         }
 
-        $bill->update([
-            'status' => 'sent',
-            'approved_by' => $user->id,
-            'approved_at' => now(),
-            'paid_amount' => $bill->amount,
-            'payment_status' => 'paid',
-            'paid_date' => now(),
-        ]);
+        DB::transaction(function () use ($bill, $user): void {
+            $bill->update([
+                'status' => 'sent',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+                'paid_amount' => $bill->amount,
+                'payment_status' => 'paid',
+                'paid_date' => now(),
+            ]);
 
-        $bill->renewService();
+            $bill->renewService();
+        });
 
         return back()->with('success', 'Bill approved and marked as paid successfully.');
     }
@@ -392,7 +412,7 @@ class BillController extends Controller
     /**
      * Validate that the service exists and belongs to the client
      */
-    private function validateService(string $serviceType, int $serviceId, int $clientId): void
+    private function validateService(string $serviceType, int $serviceId, int $clientId): Model
     {
         switch ($serviceType) {
             case 'domain':
@@ -413,6 +433,8 @@ class BillController extends Controller
         if (! $service) {
             abort(422, 'The selected service does not exist or does not belong to the specified client.');
         }
+
+        return $service;
     }
 
     /**
@@ -433,6 +455,8 @@ class BillController extends Controller
         // Service ID is required only for non-EIMS Fee types
         if ($request->service_type !== 'eims_fee') {
             $rules['service_id'] = 'required|integer';
+            $rules['service_started_date'] = 'nullable|date';
+            $rules['service_renewal_date'] = 'required|date';
         } else {
             $rules['service_id'] = 'required|integer|exists:domains,id';
             $rules['total_students'] = 'required|integer|min:1';
@@ -451,6 +475,35 @@ class BillController extends Controller
             $this->validateService('domain', (int) $validated['service_id'], (int) $validated['client_id']);
             $validated['discount'] = $validated['discount'] ?? 0;
         }
+
+        return $validated;
+    }
+
+    private function normalizeServicePeriod(array $validated, Model $service, ?Carbon $existingStart = null): array
+    {
+        $currentRenewalField = match ($validated['service_type']) {
+            'domain', 'ssl_certificate' => 'expiry_date',
+            'hosting' => 'renewal_date',
+        };
+        $initialDateField = match ($validated['service_type']) {
+            'domain' => 'registration_date',
+            'ssl_certificate' => 'issue_date',
+            'hosting' => 'start_date',
+        };
+        $startedDate = $existingStart
+            ?? $service->last_billing_date
+            ?? $service->{$currentRenewalField}
+            ?? $service->{$initialDateField};
+        $renewalDate = Carbon::parse($validated['service_renewal_date']);
+
+        if (! $startedDate || $renewalDate->lte($startedDate)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'service_renewal_date' => 'The renewal date must be after the service started date.',
+            ]);
+        }
+
+        $validated['service_started_date'] = $startedDate->toDateString();
+        $validated['service_renewal_date'] = $renewalDate->toDateString();
 
         return $validated;
     }

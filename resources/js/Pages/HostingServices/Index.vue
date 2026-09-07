@@ -3,7 +3,7 @@
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
                     Hosting Services
                 </h2>
@@ -17,7 +17,7 @@
         </template>
 
         <div class="py-12">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-4">
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -89,34 +89,42 @@
                     </div>
                 </div>
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                    <div class="p-0 text-gray-900 sm:p-4">
+                        <div class="w-full">
+                            <table class="responsive-data-table divide-y divide-gray-200">
+                                <colgroup>
+                                    <col class="w-[23%]" />
+                                    <col class="w-[16%]" />
+                                    <col class="w-[15%]" />
+                                    <col class="w-[18%]" />
+                                    <col class="w-[10%]" />
+                                    <col class="w-[18%]" />
+                                </colgroup>
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Domain
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Provider
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Package
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Renewal Date
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Status
                                         </th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 bg-white">
                                     <tr v-for="service in hostingServices" :key="service.id">
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td data-label="Domain" class="px-3 py-3 align-top">
                                             <Link
                                                 :href="route('domains.show', service.domain.id)"
                                                 class="text-indigo-600 hover:text-indigo-900"
@@ -124,13 +132,13 @@
                                                 {{ service.domain.name }}
                                             </Link>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td data-label="Provider" class="px-3 py-3 align-top">
                                             {{ service.providerRel ? service.providerRel.name : service.provider }}
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td data-label="Package" class="px-3 py-3 align-top">
                                             {{ service.package_name }}
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td data-label="Renewal Date" class="px-3 py-3 align-top">
                                             <div class="text-sm text-gray-900">
                                                 {{ formatDate(service.renewal_date) }}
                                             </div>
@@ -147,7 +155,7 @@
                                                 Expires in {{ service.days_until_expiry }} days
                                             </div>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4">
+                                        <td data-label="Status" class="px-3 py-3 align-top">
                                             <span
                                                 :class="{
                                                     'bg-green-100 text-green-800': service.status === 'active',
@@ -158,26 +166,28 @@
                                                 {{ service.status }}
                                             </span>
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                            <Link
-                                                v-if="service.is_expired || service.days_until_expiry <= 90"
-                                                :href="route('bills.create', { client_id: service.client_id, service_type: 'hosting', service_id: service.id })"
-                                                class="mr-4 text-green-600 hover:text-green-900 font-semibold"
-                                            >
-                                                Generate Bill
-                                            </Link>
-                                            <Link
-                                                :href="route('hosting-services.edit', service.id)"
-                                                class="text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                @click="deleteHostingService(service.id)"
-                                                class="ml-4 text-red-600 hover:text-red-900"
-                                            >
-                                                Delete
-                                            </button>
+                                        <td data-label="Actions" class="px-3 py-3 text-right text-sm font-medium align-top">
+                                            <div class="flex flex-wrap gap-x-3 gap-y-2 md:justify-end">
+                                                <Link
+                                                    v-if="service.is_expired || service.days_until_expiry <= 90"
+                                                    :href="route('bills.create', { client_id: service.client_id, service_type: 'hosting', service_id: service.id })"
+                                                    class="font-semibold text-green-600 hover:text-green-900"
+                                                >
+                                                    Generate Bill
+                                                </Link>
+                                                <Link
+                                                    :href="route('hosting-services.edit', service.id)"
+                                                    class="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    @click="deleteHostingService(service.id)"
+                                                    class="text-red-600 hover:text-red-900"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -247,4 +257,4 @@ const getDaysUntilExpiry = (expiryDate) => {
     const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
     return days;
 };
-</script> 
+</script>

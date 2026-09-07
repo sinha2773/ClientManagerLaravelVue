@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Domain extends Model
 {
@@ -19,6 +19,7 @@ class Domain extends Model
         'registrar',
         'registration_date',
         'expiry_date',
+        'last_billing_date',
         'auto_renew',
         'status',
         'price',
@@ -28,6 +29,7 @@ class Domain extends Model
     protected $casts = [
         'registration_date' => 'date',
         'expiry_date' => 'date',
+        'last_billing_date' => 'date',
         'auto_renew' => 'boolean',
     ];
 
@@ -60,4 +62,4 @@ class Domain extends Model
     {
         return $this->expiry_date->diffInDays(now()) <= 30;
     }
-} 
+}
