@@ -51,7 +51,7 @@
                                 >
                                     <option value="">All Status</option>
                                     <option value="draft">Draft</option>
-                                    <option value="sent">Sent</option>
+                                    <option value="sent">Approved</option>
                                     <option value="overdue">Overdue</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>
@@ -129,6 +129,9 @@
                                     <tr v-for="bill in bills.data" :key="bill.id" class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ bill.bill_number }}
+                                            <div class="mt-1 text-xs font-normal text-gray-500">
+                                                Created: {{ formatDate(bill.created_at) }}
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ bill.client.name }}
@@ -141,6 +144,14 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ bill.academic_year || '-' }}
+                                            <template v-if="bill.service_type !== 'eims_fee'">
+                                                <div class="mt-1 text-xs text-gray-500">
+                                                    Start: {{ bill.service_started_date ? formatDate(bill.service_started_date) : '-' }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    Renewal: {{ bill.service_renewal_date ? formatDate(bill.service_renewal_date) : '-' }}
+                                                </div>
+                                            </template>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ formatCurrency(bill.amount) }}
@@ -302,7 +313,7 @@ const formatPaymentStatus = (status) => {
 const formatStatus = (status) => {
     const statuses = {
         draft: 'Draft',
-        sent: 'Sent',
+        sent: 'Approved',
         overdue: 'Overdue',
         cancelled: 'Cancelled'
     }

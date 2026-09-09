@@ -542,7 +542,7 @@ const formatPaymentStatus = (status) => {
 const formatStatus = (status) => {
     const statuses = {
         draft: 'Draft',
-        sent: 'Sent',
+        sent: 'Approved',
         overdue: 'Overdue',
         cancelled: 'Cancelled'
     }

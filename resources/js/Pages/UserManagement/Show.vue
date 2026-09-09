@@ -238,7 +238,7 @@ const formatUserType = (type) => {
 const formatBillStatus = (status) => {
     const statuses = {
         draft: 'Draft',
-        sent: 'Sent',
+        sent: 'Approved',
         overdue: 'Overdue',
         cancelled: 'Cancelled'
     }
