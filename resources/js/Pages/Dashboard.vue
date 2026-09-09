@@ -113,7 +113,7 @@ const chartOptions2 = {
         </template>
 
         <div class="py-12">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="page-container">
                 <!-- Summary Cards -->
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="overflow-hidden rounded-lg bg-white p-6 shadow">

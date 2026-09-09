@@ -17,7 +17,7 @@ defineProps({
 
     <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <nav class="border-b border-gray-100 bg-white/80 backdrop-blur-md">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div class="page-container flex items-center justify-between py-4">
                 <div class="flex items-center gap-3">
                     <ApplicationLogo class="h-9 w-9" />
                     <span class="text-xl font-bold text-gray-900">ClientManager</span>
@@ -51,7 +51,7 @@ defineProps({
             </div>
         </nav>
 
-        <header class="mx-auto max-w-7xl px-6 pt-20 pb-16 text-center lg:pt-32 lg:pb-24">
+        <header class="page-container pt-20 pb-16 text-center lg:pt-32 lg:pb-24">
             <div class="mx-auto max-w-3xl">
                 <div class="mb-6 inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700">
                     Client &amp; Service Management Platform
@@ -97,7 +97,7 @@ defineProps({
             </div>
         </header>
 
-        <section id="features" class="mx-auto max-w-7xl px-6 py-20 lg:py-28">
+        <section id="features" class="page-container py-20 lg:py-28">
             <div class="text-center">
                 <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                     Everything You Need to Manage Clients
@@ -183,7 +183,7 @@ defineProps({
         </section>
 
         <section class="border-t border-gray-100 bg-white">
-            <div class="mx-auto max-w-7xl px-6 py-20 lg:py-28">
+            <div class="page-container py-20 lg:py-28">
                 <div class="mx-auto max-w-3xl text-center">
                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                         Ready to Streamline Your Business?
@@ -218,7 +218,7 @@ defineProps({
         </section>
 
         <footer class="border-t border-gray-100 bg-gray-50">
-            <div class="mx-auto max-w-7xl px-6 py-8">
+            <div class="page-container py-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div class="flex items-center gap-3">
                         <ApplicationLogo class="h-7 w-7" />

@@ -140,7 +140,7 @@ function displayValue(value) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+            <div class="page-container space-y-6">
                 <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                         <p class="text-sm font-medium text-gray-500">Total activity</p>

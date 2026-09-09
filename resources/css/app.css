@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer components {
+    .page-container {
+        width: 100%;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
     .responsive-data-table {
         width: 100%;
         table-layout: fixed;

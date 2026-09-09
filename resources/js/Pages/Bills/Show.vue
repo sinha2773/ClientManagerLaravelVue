@@ -1,11 +1,17 @@
 <template>
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between items-center">
+            <div class="flex flex-wrap justify-between items-center gap-4">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                     Bill Details - {{ bill.bill_number }}
                 </h2>
-                <div class="flex space-x-2 no-print">
+                <div class="flex flex-wrap gap-2 no-print">
+                    <Link
+                        :href="route('clients.show', bill.client.id)"
+                        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition duration-150 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        Back to Client
+                    </Link>
                     <SecondaryButton @click="printInvoice">
                         Print Invoice
                     </SecondaryButton>
@@ -23,7 +29,7 @@
         </template>
 
         <div class="py-12">
-            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <div class="page-container space-y-6">
                 <div class="invoice-print-area bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-8">
                         <div class="flex flex-col gap-6 border-b border-gray-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
@@ -393,8 +399,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import { router } from '@inertiajs/vue3'
+import { Link, router, useForm } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'

@@ -17,7 +17,7 @@
         </template>
 
         <div class="py-12">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="page-container">
                 <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-4">
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
