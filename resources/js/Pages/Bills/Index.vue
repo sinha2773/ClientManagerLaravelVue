@@ -91,58 +91,58 @@
 
                 <!-- Bills Table -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
+                    <div class="p-0 sm:p-4">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="responsive-data-table md:table-auto divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Bill Number
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Client
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Service
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Academic Year
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Amount
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Payment Status
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Due Date
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="bill in bills.data" :key="bill.id" class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td data-label="Bill Number" class="px-3 py-4 text-sm font-medium text-gray-900">
                                             {{ bill.bill_number }}
                                             <div class="mt-1 text-xs font-normal text-gray-500">
                                                 Created: {{ formatDate(bill.created_at) }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td data-label="Client" class="px-3 py-4 text-sm text-gray-900">
                                             {{ bill.client.name }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td data-label="Service" class="px-3 py-4 text-sm text-gray-900">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                                                 :class="getServiceTypeClass(bill.service_type)">
                                                 {{ formatServiceType(bill.service_type) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td data-label="Academic Year" class="px-3 py-4 text-sm text-gray-900">
                                             {{ bill.academic_year || '-' }}
                                             <template v-if="bill.service_type !== 'eims_fee'">
                                                 <div class="mt-1 text-xs text-gray-500">
@@ -153,31 +153,31 @@
                                                 </div>
                                             </template>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td data-label="Amount" class="px-3 py-4 text-sm text-gray-900">
                                             {{ formatCurrency(bill.amount) }}
                                             <div v-if="bill.paid_amount > 0" class="text-xs text-gray-500">
                                                 Paid: {{ formatCurrency(bill.paid_amount) }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td data-label="Payment Status" class="px-3 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                                                 :class="getPaymentStatusClass(bill.payment_status)">
                                                 {{ formatPaymentStatus(bill.payment_status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td data-label="Status" class="px-3 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                                                 :class="getStatusClass(bill.status)">
                                                 {{ formatStatus(bill.status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td data-label="Due Date" class="px-3 py-4 text-sm text-gray-900">
                                             {{ formatDate(bill.due_date) }}
                                             <div v-if="isOverdue(bill)" class="text-xs text-red-600 font-medium">
                                                 Overdue
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                        <td data-label="Actions" class="px-3 py-4 text-sm font-medium space-x-2">
                                             <button
                                                 @click="() => $inertia.visit(route('bills.show', bill.id))"
                                                 class="text-indigo-600 hover:text-indigo-900"
@@ -201,7 +201,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="bills.data.length === 0">
-                                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="9" class="bills-empty-state px-3 py-4 text-center text-gray-500">
                                             No bills found
                                         </td>
                                     </tr>
@@ -359,3 +359,16 @@ const getStatusClass = (status) => {
     return classes[status] || 'bg-gray-100 text-gray-800'
 }
 </script>
+
+<style scoped>
+@media (max-width: 767px) {
+    .responsive-data-table td.bills-empty-state {
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .responsive-data-table td.bills-empty-state::before {
+        content: none;
+    }
+}
+</style>
