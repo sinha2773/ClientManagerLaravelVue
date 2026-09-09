@@ -30,8 +30,14 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
+    <GuestLayout split>
         <Head title="Log in" />
+
+        <div class="mb-8">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">Welcome back</p>
+            <h2 class="text-3xl font-semibold tracking-tight text-gray-900">Log in to your workspace</h2>
+            <p class="mt-3 text-sm leading-6 text-gray-500">Enter your details to access Client Manager.</p>
+        </div>
 
         <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
@@ -44,7 +50,7 @@ const submit = () => {
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full py-3"
                     v-model="form.email"
                     required
                     autofocus
@@ -60,7 +66,7 @@ const submit = () => {
                 <TextInput
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full py-3"
                     v-model="form.password"
                     required
                     autocomplete="current-password"
@@ -78,7 +84,7 @@ const submit = () => {
                 </label>
             </div>
 
-            <div class="mt-4 flex items-center justify-end">
+            <div class="mt-6 flex flex-col gap-5">
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
@@ -88,7 +94,7 @@ const submit = () => {
                 </Link>
 
                 <PrimaryButton
-                    class="ms-4"
+                    class="order-first w-full justify-center bg-indigo-600 py-3 hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-800"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
