@@ -81,7 +81,7 @@
                         >
                             <h3 class="font-medium text-gray-900">Renewal Period</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                The start date is locked to the service billing history. Renewal can only be manually changed by an approver.
+                                Enter the start date when selecting a service with no billing history. Existing bill dates are preserved. Renewal defaults to one year later.
                             </p>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
@@ -90,8 +90,11 @@
                                         id="service_started_date"
                                         v-model="form.service_started_date"
                                         type="date"
-                                        class="mt-1 block w-full bg-gray-100"
-                                        readonly
+                                        class="mt-1 block w-full"
+                                        :readonly="!canEnterStart"
+                                        :class="{ 'bg-gray-100': !canEnterStart }"
+                                        :disabled="!form.service_id"
+                                        required
                                     />
                                     <InputError :message="form.errors.service_started_date" class="mt-2" />
                                 </div>
@@ -339,9 +342,10 @@ import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
 import { formatCurrency } from '@/utils/currency.js'
-import { addOneYear, servicePeriodStart, toDateInput } from '@/utils/servicePeriod.js'
+import { addOneYear, toDateInput } from '@/utils/servicePeriod.js'
 
 const props = defineProps({
+    billingPeriods: { type: Object, default: () => ({}) },
     bill: Object,
     clients: Array,
     domains: Array,
@@ -475,7 +479,7 @@ const syncServicePeriod = (service, overwriteRenewal = false) => {
     }
 
     if (!form.service_started_date || overwriteRenewal) {
-        form.service_started_date = servicePeriodStart(service, form.service_type)
+        form.service_started_date = previousRenewal.value || ''
     }
 
     if (!form.service_renewal_date || overwriteRenewal) {
@@ -552,6 +556,12 @@ const formatServiceType = (type) => {
 const submit = () => {
     form.patch(route('bills.update', props.bill.id))
 }
+
+const previousRenewal = computed(() => props.billingPeriods[`${form.client_id}:${form.service_type}:${form.service_id}`] || '')
+const canEnterStart = computed(() => !previousRenewal.value && !(form.service_type === props.bill.service_type && String(form.service_id) === String(props.bill.service_id) && props.bill.service_started_date))
+watch(() => form.service_started_date, (value) => {
+    if (canEnterStart.value) form.service_renewal_date = addOneYear(value)
+})
 
 watch(calculatedEimsAmount, (amount) => {
     if (form.service_type === 'eims_fee') {

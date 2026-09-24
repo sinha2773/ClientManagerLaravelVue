@@ -114,7 +114,7 @@
                         >
                             <h3 class="font-medium text-gray-900">Renewal Period</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                The start date comes from the selected service. Renewal defaults to one year later<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
+                                Enter the start date for the first bill. Later bills start at the previous bill’s renewal date. Renewal defaults to one year later<span v-if="canEditRenewal"> and can be adjusted by an approver</span>.
                             </p>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
@@ -123,8 +123,11 @@
                                         id="service_started_date"
                                         v-model="form.service_started_date"
                                         type="date"
-                                        class="mt-1 block w-full bg-gray-100"
-                                        readonly
+                                        class="mt-1 block w-full"
+                                        :readonly="!canEnterStart"
+                                        :class="{ 'bg-gray-100': !canEnterStart }"
+                                        :disabled="!form.service_id"
+                                        required
                                     />
                                     <InputError :message="form.errors.service_started_date" class="mt-2" />
                                 </div>
@@ -373,9 +376,10 @@ import InputLabel from '@/Components/InputLabel.vue'
 import InputError from '@/Components/InputError.vue'
 import { CLIENT_TYPES, formatClientType } from '@/constants/clientTypes'
 import { formatCurrency } from '@/utils/currency.js'
-import { addOneYear, servicePeriodStart } from '@/utils/servicePeriod.js'
+import { addOneYear } from '@/utils/servicePeriod.js'
 
 const props = defineProps({
+    billingPeriods: { type: Object, default: () => ({}) },
     clients: Array,
     domains: Array,
     hostingServices: Array,
@@ -535,7 +539,7 @@ const updateAmountFromService = () => {
         }
         if (selectedService) {
             form.description = `Renewal for ${getServiceDisplayName(selectedService)}`
-            form.service_started_date = servicePeriodStart(selectedService, form.service_type)
+            form.service_started_date = previousRenewal.value || ''
             form.service_renewal_date = addOneYear(form.service_started_date)
         }
     } else {
@@ -618,6 +622,12 @@ const submit = () => {
 
     form.post(route('bills.store'))
 }
+
+const previousRenewal = computed(() => props.billingPeriods[`${form.client_id}:${form.service_type}:${form.service_id}`] || '')
+const canEnterStart = computed(() => !previousRenewal.value)
+watch(() => form.service_started_date, (value) => {
+    if (canEnterStart.value) form.service_renewal_date = addOneYear(value)
+})
 
 watch(calculatedEimsAmount, (amount) => {
     if (form.service_type === 'eims_fee') {

@@ -97,6 +97,7 @@ class BillController extends Controller
             'sslCertificates' => $sslCertificates,
             'academicYears' => AcademicYear::options(),
             'canEditRenewal' => $user->canApproveBills(),
+            'billingPeriods' => $this->billingPeriods(),
             'prefill' => [
                 'client_id' => $request->query('client_id'),
                 'service_type' => $request->query('service_type'),
@@ -202,6 +203,7 @@ class BillController extends Controller
             'sslCertificates' => $sslCertificates,
             'academicYears' => AcademicYear::options(),
             'canEditRenewal' => $user->canApproveBills(),
+            'billingPeriods' => $this->billingPeriods($bill->id),
         ]);
     }
 
@@ -230,6 +232,7 @@ class BillController extends Controller
                 $request->user()->canApproveBills(),
                 $keepExistingStart ? $bill->service_started_date : null,
                 $sameService ? $bill->service_renewal_date : null,
+                $bill->id,
             );
         } else {
             $validated['service_started_date'] = null;
@@ -489,26 +492,44 @@ class BillController extends Controller
         return $validated;
     }
 
+    private function billingPeriods(?int $excludeBillId = null): array
+    {
+        return Bill::query()
+            ->where('status', '!=', 'cancelled')
+            ->when($excludeBillId, fn ($query) => $query->where('id', '!=', $excludeBillId))
+            ->whereNotNull('service_renewal_date')
+            ->selectRaw('client_id, service_type, service_id, MAX(service_renewal_date) as renewal_date')
+            ->groupBy('client_id', 'service_type', 'service_id')
+            ->get()
+            ->mapWithKeys(fn ($bill) => [
+                "{$bill->client_id}:{$bill->service_type}:{$bill->service_id}" => substr($bill->renewal_date, 0, 10),
+            ])->all();
+    }
+
     private function normalizeServicePeriod(
         array $validated,
         Model $service,
         bool $canEditRenewal,
         ?Carbon $existingStart = null,
         ?Carbon $existingRenewal = null,
+        ?int $excludeBillId = null,
     ): array {
-        $currentRenewalField = match ($validated['service_type']) {
-            'domain', 'ssl_certificate' => 'expiry_date',
-            'hosting' => 'renewal_date',
-        };
-        $initialDateField = match ($validated['service_type']) {
-            'domain' => 'registration_date',
-            'ssl_certificate' => 'issue_date',
-            'hosting' => 'start_date',
-        };
+        $previousRenewal = Bill::query()
+            ->where('status', '!=', 'cancelled')
+            ->where('client_id', $validated['client_id'])
+            ->where('service_type', $validated['service_type'])
+            ->where('service_id', $service->id)
+            ->when($excludeBillId, fn ($query) => $query->where('id', '!=', $excludeBillId))
+            ->max('service_renewal_date');
         $startedDate = $existingStart
-            ?? $service->last_billing_date
-            ?? $service->{$currentRenewalField}
-            ?? $service->{$initialDateField};
+            ?? ($previousRenewal ? Carbon::parse($previousRenewal) : null)
+            ?? (! empty($validated['service_started_date']) ? Carbon::parse($validated['service_started_date']) : null);
+
+        if (! $startedDate) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'service_started_date' => 'Enter the start date for the first bill for this service.',
+            ]);
+        }
         $renewalDate = $canEditRenewal
             ? Carbon::parse($validated['service_renewal_date'])
             : ($existingRenewal?->copy() ?? $startedDate?->copy()->addYearNoOverflow());

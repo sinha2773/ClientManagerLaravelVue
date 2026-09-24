@@ -70,11 +70,79 @@ class BillCreationTest extends TestCase
         $this->assertSame('2026', $bill->academic_year);
         $this->assertSame($client->id, $bill->client_id);
         $this->assertSame('domain', $bill->service_type);
-        $this->assertSame($domain->expiry_date->toDateString(), $bill->service_started_date->toDateString());
+        $this->assertSame('1999-01-01', $bill->service_started_date->toDateString());
         $this->assertSame(
-            $domain->expiry_date->copy()->addYearNoOverflow()->toDateString(),
+            '2000-01-01',
             $bill->service_renewal_date->toDateString(),
         );
+    }
+
+    public function test_first_bill_uses_manual_start_and_next_bill_uses_previous_bill(): void
+    {
+        $user = $this->createAccountManager();
+        $client = $this->createClient();
+        $services = [
+            'domain' => $domain = Domain::create([
+                'client_id' => $client->id,
+                'name' => 'period.example.com',
+                'registrar' => 'Registrar',
+                'registration_date' => '2026-09-16',
+                'expiry_date' => '2027-09-16',
+                'price' => 100,
+                'status' => 'active',
+            ]),
+            'hosting' => HostingService::create([
+                'client_id' => $client->id,
+                'domain_id' => $domain->id,
+                'provider' => 'Host',
+                'package_name' => 'Annual',
+                'start_date' => '2026-09-16',
+                'renewal_date' => '2027-09-16',
+                'price' => 100,
+                'status' => 'active',
+                'username' => 'test',
+                'password' => 'secret',
+            ]),
+            'ssl_certificate' => SslCertificate::create([
+                'client_id' => $client->id,
+                'domain_id' => $domain->id,
+                'provider' => 'Certificate Provider',
+                'type' => 'DV',
+                'issue_date' => '2026-09-16',
+                'expiry_date' => '2027-09-16',
+                'price' => 100,
+                'status' => 'active',
+            ]),
+        ];
+
+        foreach ($services as $type => $service) {
+            $this->actingAs($user)->post(route('bills.store'), [
+                'client_id' => $client->id,
+                'service_type' => $type,
+                'service_id' => $service->id,
+                'description' => 'Missing first start date',
+                'academic_year' => '2026',
+                'amount' => 100,
+                'due_date' => now()->addMonth()->toDateString(),
+            ])->assertSessionHasErrors('service_started_date');
+
+            foreach ([2026, 2027] as $startYear) {
+                $this->actingAs($user)->post(route('bills.store'), [
+                    'client_id' => $client->id,
+                    'service_type' => $type,
+                    'service_id' => $service->id,
+                    'service_started_date' => '2026-09-16',
+                    'description' => 'Annual service',
+                    'academic_year' => '2026',
+                    'amount' => 100,
+                    'due_date' => now()->addMonth()->toDateString(),
+                ])->assertSessionHasNoErrors()->assertRedirect();
+
+                $bill = Bill::latest('id')->firstOrFail();
+                $this->assertSame("{$startYear}-09-16", $bill->service_started_date->toDateString());
+                $this->assertSame(($startYear + 1).'-09-16', $bill->service_renewal_date->toDateString());
+            }
+        }
     }
 
     public function test_approver_can_set_a_custom_bill_renewal_date(): void
@@ -109,7 +177,7 @@ class BillCreationTest extends TestCase
         ])->assertRedirect();
 
         $bill = Bill::sole();
-        $this->assertSame('2026-01-01', $bill->service_started_date->toDateString());
+        $this->assertSame('1999-01-01', $bill->service_started_date->toDateString());
         $this->assertSame('2027-09-15', $bill->service_renewal_date->toDateString());
     }
 

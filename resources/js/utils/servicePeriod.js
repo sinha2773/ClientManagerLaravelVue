@@ -20,7 +20,7 @@ export const servicePeriodStart = (service, serviceType) => {
         ssl_certificate: service.issue_date,
     }[serviceType]
 
-    return toDateInput(service.last_billing_date || currentDate || initialDate)
+    return toDateInput(service.last_billing_date || initialDate || currentDate)
 }
 
 export const addOneYear = (value) => {
