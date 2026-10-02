@@ -31,13 +31,53 @@ class BillCreationTest extends TestCase
         $this->assertDatabaseMissing('bills', ['id' => $bill->id]);
     }
 
-    public function test_approvers_cannot_delete_approved_bills(): void
+    public function test_only_approvers_can_delete_approved_bills(): void
     {
         $approver = User::factory()->create(['user_type' => 'approver', 'is_active' => true]);
         $bill = $this->createBill($approver, $this->createClient(), ['status' => 'sent']);
 
-        $this->actingAs($approver)->delete(route('bills.destroy', $bill))->assertForbidden();
-        $this->assertDatabaseHas('bills', ['id' => $bill->id]);
+        $this->actingAs($approver)->delete(route('bills.destroy', $bill))->assertRedirect(route('bills.index'));
+        $this->assertDatabaseMissing('bills', ['id' => $bill->id]);
+    }
+
+    public function test_approver_can_edit_an_approved_bill_renewal_and_sync_service(): void
+    {
+        $approver = User::factory()->create(['user_type' => 'approver', 'is_active' => true]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'approved-edit.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $bill = $this->createBill($approver, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2027-01-01',
+        ]);
+        $this->actingAs($approver)->patch(route('bills.approve', $bill))->assertRedirect();
+        $this->actingAs($approver)->get(route('bills.edit', $bill))->assertOk();
+
+        $this->actingAs($approver)->put(route('bills.update', $bill), [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2028-03-01',
+            'description' => 'Adjusted renewal',
+            'academic_year' => '2026',
+            'amount' => 3000,
+            'due_date' => now()->addMonth()->toDateString(),
+        ])->assertRedirect(route('bills.show', $bill));
+
+        $this->assertSame('2028-03-01', $bill->fresh()->service_renewal_date->toDateString());
+        $this->assertSame('2028-03-01', $domain->fresh()->expiry_date->toDateString());
+        $this->assertEquals(3000, $bill->fresh()->paid_amount);
     }
 
     public function test_create_page_prefills_client_and_fee_type(): void

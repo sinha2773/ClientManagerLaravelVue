@@ -175,7 +175,7 @@ class BillController extends Controller
             'bill' => $bill,
             'service' => $service,
             'canApprove' => $user->canApproveBills(),
-            'canEdit' => $bill->status === 'draft',
+            'canEdit' => $bill->status === 'draft' || $user->canApproveBills(),
         ]);
     }
 
@@ -186,7 +186,7 @@ class BillController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->canManageBills() || $bill->status !== 'draft') {
+        if (! $user->canManageBills() || ($bill->status !== 'draft' && ! $user->canApproveBills())) {
             abort(403, 'Unauthorized to edit this bill.');
         }
 
@@ -204,6 +204,7 @@ class BillController extends Controller
             'academicYears' => AcademicYear::options(),
             'canEditRenewal' => $user->canApproveBills(),
             'billingPeriods' => $this->billingPeriods($bill->id),
+            'isApproved' => $bill->status !== 'draft',
         ]);
     }
 
@@ -214,7 +215,7 @@ class BillController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->canManageBills() || $bill->status !== 'draft') {
+        if (! $user->canManageBills() || ($bill->status !== 'draft' && ! $user->canApproveBills())) {
             abort(403, 'Unauthorized to edit this bill.');
         }
 
@@ -239,7 +240,17 @@ class BillController extends Controller
             $validated['service_renewal_date'] = null;
         }
 
-        $bill->update($validated);
+        DB::transaction(function () use ($bill, $validated): void {
+            $oldRenewal = $bill->service_renewal_date?->toDateString();
+            $wasFullyPaid = $bill->payment_status === 'paid';
+            $bill->update($validated);
+            if ($wasFullyPaid) {
+                $bill->update(['paid_amount' => $bill->amount]);
+            }
+            if ($bill->service_renewed_at && $oldRenewal !== $bill->service_renewal_date?->toDateString()) {
+                $this->syncRenewedService($bill, $oldRenewal);
+            }
+        });
 
         return redirect()->route('bills.show', $bill)->with('success', 'Bill updated successfully.');
     }
@@ -251,11 +262,18 @@ class BillController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->canApproveBills() || $bill->status !== 'draft') {
+        if (! $user->canApproveBills()) {
             abort(403, 'Unauthorized to delete this bill.');
         }
 
-        $bill->delete();
+        DB::transaction(function () use ($bill): void {
+            $oldRenewal = $bill->service_renewal_date?->toDateString();
+            $wasRenewed = (bool) $bill->service_renewed_at;
+            $bill->delete();
+            if ($wasRenewed) {
+                $this->syncRenewedService($bill, $oldRenewal);
+            }
+        });
 
         return redirect()->route('bills.index')->with('success', 'Bill deleted successfully.');
     }
@@ -459,7 +477,7 @@ class BillController extends Controller
             'description' => 'required|string|max:255',
             'academic_year' => ['required', Rule::in(AcademicYear::options())],
             'amount' => 'required|numeric|min:0',
-            'due_date' => 'required|date|after_or_equal:today',
+            'due_date' => $bill ? 'required|date' : 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ];
 
@@ -480,6 +498,12 @@ class BillController extends Controller
             $rules['student_summary_year'] = 'nullable|digits:4';
             $rules['student_grand_totals'] = 'nullable|array';
             $rules['student_summary'] = 'nullable|array';
+        }
+
+        if ($bill && $bill->status !== 'draft') {
+            foreach (['client_id', 'service_type', 'service_id'] as $field) {
+                $rules[$field] = array_merge(explode('|', $rules[$field]), [Rule::in([$bill->{$field}])]);
+            }
         }
 
         $validated = $request->validate($rules);
@@ -544,6 +568,35 @@ class BillController extends Controller
         $validated['service_renewal_date'] = $renewalDate->toDateString();
 
         return $validated;
+    }
+
+    private function syncRenewedService(Bill $bill, ?string $oldRenewal): void
+    {
+        $service = match ($bill->service_type) {
+            'domain' => Domain::query()->lockForUpdate()->find($bill->service_id),
+            'hosting' => HostingService::query()->lockForUpdate()->find($bill->service_id),
+            'ssl_certificate' => SslCertificate::query()->lockForUpdate()->find($bill->service_id),
+            default => null,
+        };
+        if (! $service) {
+            return;
+        }
+
+        $field = $bill->service_type === 'hosting' ? 'renewal_date' : 'expiry_date';
+        // Preserve a later renewal or a manual service override.
+        if ($service->{$field}?->toDateString() !== $oldRenewal) {
+            return;
+        }
+
+        $latest = Bill::query()
+            ->where('service_type', $bill->service_type)
+            ->where('service_id', $bill->service_id)
+            ->whereNotNull('service_renewed_at')
+            ->max('service_renewal_date');
+        $newDate = $latest ? Carbon::parse($latest) : $bill->service_started_date;
+        if ($newDate) {
+            $service->update([$field => $newDate, 'last_billing_date' => $latest ? $newDate : null]);
+        }
     }
 
     private function buildStudentManagementBaseUrl(string $domainName): string

@@ -20,6 +20,7 @@
                             <InputLabel for="client_id" value="Client" />
                             <select
                                 id="client_id"
+                                :disabled="isApproved"
                                 v-model="form.client_id"
                                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 required
@@ -38,6 +39,7 @@
                             <InputLabel for="service_type" value="Service Type" />
                             <select
                                 id="service_type"
+                                :disabled="isApproved"
                                 v-model="form.service_type"
                                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 required
@@ -57,6 +59,7 @@
                             <InputLabel for="service_id" value="Service" />
                             <select
                                 id="service_id"
+                                :disabled="isApproved"
                                 v-model="form.service_id"
                                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 required
@@ -157,6 +160,7 @@
                                 <InputLabel for="eims_domain_id" value="Domain" />
                                 <select
                                     id="eims_domain_id"
+                                :disabled="isApproved"
                                     v-model="form.service_id"
                                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     required
@@ -353,6 +357,7 @@ const props = defineProps({
     sslCertificates: Array,
     academicYears: Array,
     canEditRenewal: Boolean,
+    isApproved: Boolean,
 })
 
 const form = useForm({

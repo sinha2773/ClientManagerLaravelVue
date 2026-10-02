@@ -185,7 +185,7 @@
                                                 View
                                             </button>
                                             <button
-                                                v-if="bill.status === 'draft'"
+                                                v-if="(bill.status === 'draft' || canApprove)"
                                                 @click="() => $inertia.visit(route('bills.edit', bill.id))"
                                                 class="text-blue-600 hover:text-blue-900"
                                             >
@@ -199,7 +199,7 @@
                                                 Approve
                                             </button>
                                             <button
-                                                v-if="canApprove && bill.status === 'draft'"
+                                                v-if="canApprove"
                                                 type="button"
                                                 @click="deleteBill(bill)"
                                                 class="text-red-600 hover:text-red-900"
