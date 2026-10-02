@@ -216,7 +216,7 @@
                                     Approve Bill
                                 </PrimaryButton>
                                 <DangerButton 
-                                    v-if="canEdit"
+                                    v-if="canApprove && bill.status === 'draft'"
                                     @click="deleteBill"
                                 >
                                     Delete Bill

@@ -251,7 +251,7 @@ class BillController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->canManageBills() || $bill->status !== 'draft') {
+        if (! $user->canApproveBills() || $bill->status !== 'draft') {
             abort(403, 'Unauthorized to delete this bill.');
         }
 

@@ -17,6 +17,29 @@ class BillCreationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_only_approvers_can_delete_draft_bills(): void
+    {
+        $manager = $this->createAccountManager();
+        $approver = User::factory()->create(['user_type' => 'approver', 'is_active' => true]);
+        $bill = $this->createBill($manager, $this->createClient());
+
+        $this->actingAs($manager)->delete(route('bills.destroy', $bill))->assertForbidden();
+        $this->assertDatabaseHas('bills', ['id' => $bill->id]);
+
+        $this->actingAs($approver)->delete(route('bills.destroy', $bill))
+            ->assertRedirect(route('bills.index'));
+        $this->assertDatabaseMissing('bills', ['id' => $bill->id]);
+    }
+
+    public function test_approvers_cannot_delete_approved_bills(): void
+    {
+        $approver = User::factory()->create(['user_type' => 'approver', 'is_active' => true]);
+        $bill = $this->createBill($approver, $this->createClient(), ['status' => 'sent']);
+
+        $this->actingAs($approver)->delete(route('bills.destroy', $bill))->assertForbidden();
+        $this->assertDatabaseHas('bills', ['id' => $bill->id]);
+    }
+
     public function test_create_page_prefills_client_and_fee_type(): void
     {
         $user = $this->createAccountManager();

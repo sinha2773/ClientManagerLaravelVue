@@ -198,6 +198,14 @@
                                             >
                                                 Approve
                                             </button>
+                                            <button
+                                                v-if="canApprove && bill.status === 'draft'"
+                                                type="button"
+                                                @click="deleteBill(bill)"
+                                                class="text-red-600 hover:text-red-900"
+                                            >
+                                                Delete
+                                            </button>
                                         </td>
                                     </tr>
                                     <tr v-if="bills.data.length === 0">
@@ -288,6 +296,12 @@ const approveBill = (billId) => {
                 // Handled by the backend redirect
             }
         })
+    }
+}
+
+const deleteBill = (bill) => {
+    if (confirm(`Are you sure you want to delete bill ${bill.bill_number}? This action cannot be undone.`)) {
+        router.delete(route('bills.destroy', bill.id))
     }
 }
 
