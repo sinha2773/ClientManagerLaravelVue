@@ -13,6 +13,7 @@ class Bill extends Model
 
     protected $fillable = [
         'bill_number',
+        'manual_invoice',
         'client_id',
         'service_type',
         'service_id',
@@ -30,6 +31,7 @@ class Bill extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'adjust_with_salary',
         'total_students',
         'eims_monthly',
         'discount',
@@ -44,6 +46,7 @@ class Bill extends Model
         'paid_amount' => 'decimal:2',
         'eims_monthly' => 'decimal:2',
         'discount' => 'decimal:2',
+        'adjust_with_salary' => 'boolean',
         'due_date' => 'date',
         'paid_date' => 'date',
         'approved_at' => 'datetime',

@@ -98,6 +98,68 @@ class BillCreationTest extends TestCase
         );
     }
 
+    public function test_bill_stores_and_updates_manual_invoice_and_salary_adjustment(): void
+    {
+        $user = $this->createAccountManager();
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'salary-adjust.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => now()->subYear()->toDateString(),
+            'expiry_date' => now()->addYear()->toDateString(),
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $payload = [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'description' => 'Domain renewal',
+            'academic_year' => '2026',
+            'amount' => 2500,
+            'due_date' => now()->addMonth()->toDateString(),
+        ];
+
+        $this->actingAs($user)->post(route('bills.store'), [
+            ...$payload,
+            'manual_invoice' => 'INV-001',
+            'adjust_with_salary' => true,
+        ])->assertRedirect();
+
+        $bill = Bill::sole();
+        $this->assertSame('INV-001', $bill->manual_invoice);
+        $this->assertTrue($bill->adjust_with_salary);
+
+        $this->actingAs($user)->patch(route('bills.update', $bill), [
+            ...$payload,
+            'manual_invoice' => '',
+            'adjust_with_salary' => false,
+        ])->assertRedirect(route('bills.show', $bill));
+
+        $bill->refresh();
+        $this->assertNull($bill->manual_invoice);
+        $this->assertFalse($bill->adjust_with_salary);
+    }
+
+    public function test_salary_adjustment_defaults_to_no_and_rejects_invalid_values(): void
+    {
+        $user = $this->createAccountManager();
+        $client = $this->createClient();
+        $bill = $this->createBill($user, $client);
+
+        $this->assertFalse($bill->fresh()->adjust_with_salary);
+        $this->assertNull($bill->fresh()->manual_invoice);
+
+        $this->actingAs($user)->post(route('bills.store'), [
+            'adjust_with_salary' => 'maybe',
+            'manual_invoice' => str_repeat('a', 256),
+        ])->assertSessionHasErrors(['adjust_with_salary', 'manual_invoice']);
+    }
+
     public function test_bill_creation_persists_academic_year(): void
     {
         $user = $this->createAccountManager();

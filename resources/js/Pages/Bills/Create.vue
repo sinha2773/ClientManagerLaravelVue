@@ -310,6 +310,28 @@
                             <InputError :message="form.errors.due_date" class="mt-2" />
                         </div>
 
+                        <!-- Manual Invoice -->
+                        <div>
+                            <InputLabel for="manual_invoice" value="Manual Invoice (Optional)" />
+                            <TextInput
+                                id="manual_invoice"
+                                v-model="form.manual_invoice"
+                                type="text"
+                                class="mt-1 block w-full"
+                                maxlength="255"
+                            />
+                            <InputError :message="form.errors.manual_invoice" class="mt-2" />
+                        </div>
+
+                        <!-- Adjust with Salary -->
+                        <div>
+                            <label for="adjust_with_salary" class="flex items-center">
+                                <Checkbox id="adjust_with_salary" v-model:checked="form.adjust_with_salary" />
+                                <span class="ms-2 text-sm font-medium text-gray-700">Adjust with Salary?</span>
+                            </label>
+                            <InputError :message="form.errors.adjust_with_salary" class="mt-2" />
+                        </div>
+
                         <!-- Notes -->
                         <div>
                             <InputLabel for="notes" value="Notes (Optional)" />
@@ -370,6 +392,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
 import Modal from '@/Components/Modal.vue'
+import Checkbox from '@/Components/Checkbox.vue'
 import TextInput from '@/Components/TextInput.vue'
 import TextArea from '@/Components/TextArea.vue'
 import InputLabel from '@/Components/InputLabel.vue'
@@ -403,6 +426,8 @@ const form = useForm({
     amount: '',
     due_date: '',
     notes: '',
+    manual_invoice: '',
+    adjust_with_salary: false,
     total_students: '',
     eims_monthly: '',
     discount: '',

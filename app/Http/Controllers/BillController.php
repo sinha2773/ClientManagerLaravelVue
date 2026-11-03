@@ -479,6 +479,8 @@ class BillController extends Controller
             'amount' => 'required|numeric|min:0',
             'due_date' => $bill ? 'required|date' : 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
+            'manual_invoice' => 'nullable|string|max:255',
+            'adjust_with_salary' => 'boolean',
         ];
 
         // Service ID is required only for non-EIMS Fee types
