@@ -52,6 +52,11 @@ class BillController extends Controller
             $query->where('academic_year', $request->academic_year);
         }
 
+        // Filter by salary adjustment
+        if ($request->filled('adjust_with_salary')) {
+            $query->where('adjust_with_salary', $request->boolean('adjust_with_salary'));
+        }
+
         // Search by bill number or client name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -68,7 +73,7 @@ class BillController extends Controller
 
         return Inertia::render('Bills/Index', [
             'bills' => $bills,
-            'filters' => $request->only(['payment_status', 'status', 'service_type', 'academic_year', 'search']),
+            'filters' => $request->only(['payment_status', 'status', 'service_type', 'academic_year', 'adjust_with_salary', 'search']),
             'academicYears' => AcademicYear::options(),
             'canApprove' => $user->canApproveBills(),
         ]);

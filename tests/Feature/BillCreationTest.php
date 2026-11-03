@@ -160,6 +160,44 @@ class BillCreationTest extends TestCase
         ])->assertSessionHasErrors(['adjust_with_salary', 'manual_invoice']);
     }
 
+    public function test_overdue_bill_can_be_updated_without_changing_its_due_date(): void
+    {
+        $user = $this->createAccountManager();
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'overdue.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2027-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $overdue = now()->subMonth()->toDateString();
+        $bill = $this->createBill($user, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2027-01-01',
+            'due_date' => $overdue,
+        ]);
+
+        $this->actingAs($user)->patch(route('bills.update', $bill), [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'description' => 'Updated description',
+            'academic_year' => '2026',
+            'amount' => 2500,
+            'due_date' => $overdue,
+        ])->assertRedirect(route('bills.show', $bill))->assertSessionHasNoErrors();
+
+        $bill->refresh();
+        $this->assertSame('Updated description', $bill->description);
+        $this->assertSame($overdue, $bill->due_date->toDateString());
+    }
+
     public function test_bill_creation_persists_academic_year(): void
     {
         $user = $this->createAccountManager();
@@ -554,6 +592,34 @@ class BillCreationTest extends TestCase
             ->has('bills.data', 1)
             ->where('bills.data.0.id', $matchingBill->id)
         );
+    }
+
+    public function test_bill_index_filters_by_adjust_with_salary(): void
+    {
+        $user = $this->createAccountManager();
+        $client = $this->createClient();
+        $adjusted = $this->createBill($user, $client, [
+            'manual_invoice' => 'MAN-001',
+            'adjust_with_salary' => true,
+        ]);
+        $notAdjusted = $this->createBill($user, $client);
+
+        $this->actingAs($user)->get(route('bills.index', ['adjust_with_salary' => '1']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.adjust_with_salary', '1')
+                ->has('bills.data', 1)
+                ->where('bills.data.0.id', $adjusted->id)
+                ->where('bills.data.0.manual_invoice', 'MAN-001')
+                ->where('bills.data.0.adjust_with_salary', true));
+
+        $this->actingAs($user)->get(route('bills.index', ['adjust_with_salary' => '0']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.adjust_with_salary', '0')
+                ->has('bills.data', 1)
+                ->where('bills.data.0.id', $notAdjusted->id));
+
+        $this->actingAs($user)->get(route('bills.index'))
+            ->assertInertia(fn (Assert $page) => $page->has('bills.data', 2));
     }
 
     public function test_client_billing_history_filters_by_academic_year_and_type(): void

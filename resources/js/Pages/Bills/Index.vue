@@ -15,7 +15,7 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Filters</h3>
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
                             <div>
                                 <InputLabel for="search" value="Search" />
                                 <TextInput
@@ -85,6 +85,19 @@
                                     </option>
                                 </select>
                             </div>
+                            <div>
+                                <InputLabel for="adjust_with_salary" value="Adjust with Salary" />
+                                <select
+                                    id="adjust_with_salary"
+                                    v-model="filters.adjust_with_salary"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    @change="applyFilters"
+                                >
+                                    <option value="">All</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -129,6 +142,9 @@
                                     <tr v-for="bill in bills.data" :key="bill.id" class="hover:bg-gray-50">
                                         <td data-label="Bill Number" class="px-3 py-4 text-sm font-medium text-gray-900">
                                             {{ bill.bill_number }}
+                                            <div v-if="bill.manual_invoice" class="mt-1 text-xs font-normal text-gray-700">
+                                                Manual Invoice: {{ bill.manual_invoice }}
+                                            </div>
                                             <div class="mt-1 text-xs font-normal text-gray-500">
                                                 Created: {{ formatDate(bill.created_at) }}
                                             </div>
@@ -164,6 +180,9 @@
                                                 :class="getPaymentStatusClass(bill.payment_status)">
                                                 {{ formatPaymentStatus(bill.payment_status) }}
                                             </span>
+                                            <div v-if="bill.adjust_with_salary" class="mt-1 text-xs text-gray-500">
+                                                Adjusted with Salary
+                                            </div>
                                         </td>
                                         <td data-label="Status" class="px-3 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -283,6 +302,7 @@ const filters = ref({
     status: props.filters.status || '',
     service_type: props.filters.service_type || '',
     academic_year: props.filters.academic_year || '',
+    adjust_with_salary: props.filters.adjust_with_salary || '',
 })
 
 const applyFilters = () => {

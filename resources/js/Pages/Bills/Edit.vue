@@ -276,7 +276,6 @@
                                 type="date"
                                 class="mt-1 block w-full"
                                 required
-                                :min="today"
                             />
                             <InputError :message="form.errors.due_date" class="mt-2" />
                         </div>
@@ -392,7 +391,7 @@ const form = useForm({
     description: props.bill.description,
     academic_year: props.bill.academic_year || String(new Date().getFullYear()),
     amount: props.bill.amount,
-    due_date: props.bill.due_date,
+    due_date: toDateInput(props.bill.due_date),
     notes: props.bill.notes || '',
     manual_invoice: props.bill.manual_invoice || '',
     adjust_with_salary: Boolean(props.bill.adjust_with_salary),
@@ -406,7 +405,6 @@ const form = useForm({
 })
 
 const availableServices = ref([])
-const today = new Date().toISOString().split('T')[0]
 const showStudentSummaryModal = ref(false)
 const studentSummaryYear = ref(String(props.bill.student_summary_year || new Date().getFullYear()))
 const studentSummaryError = ref('')

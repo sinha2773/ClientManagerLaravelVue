@@ -42,7 +42,13 @@ The `edit` and `show` actions pass the whole `Bill` model, so a new column reach
 | `service_started_date`, `service_renewal_date` | date | `NULL` for `eims_fee` |
 | `academic_year` | string | Required. Options come from `App\Support\AcademicYear`. |
 
-`manual_invoice` and `adjust_with_salary` are only stored and shown on the two forms. They are not on `Show.vue`, `Index.vue` or the printed invoice, and `adjust_with_salary` has no link to payroll (`PaySalaryController`) yet.
+`manual_invoice` and `adjust_with_salary` are edited on the two forms and shown on `Index.vue`, under Bill Number and Payment Status. They are not on `Show.vue` or the printed invoice, and `adjust_with_salary` has no link to payroll (`PaySalaryController`) yet.
+
+## Index filters
+
+`BillController::index()` filters by `payment_status`, `status`, `service_type`, `academic_year` and `adjust_with_salary` (`1` = Yes, `0` = No, empty = all). `search` matches bill number, description and client name, but not `manual_invoice`.
+
+A new filter needs a query condition, an entry in the `filters` list passed to the page, and a control plus default in `Index.vue`.
 
 ## Permissions
 
@@ -61,7 +67,5 @@ Checked in the controller through `User::canManageBills()` and `User::canApprove
 - **Renewal period:** the first bill for a service takes a manually entered start date, and later bills start at the previous bill's renewal date. Renewal defaults to one year later. See `normalizeServicePeriod()` and `billingPeriods()`.
 - **Renewing a service:** a bill renews its service only once it is both paid and approved, and only once (`Bill::renewService()`, `service_renewed_at`). Editing the renewal date of an already renewed bill updates the service through `syncRenewedService()`.
 - **EIMS amount:** the forms calculate `students × monthly fee × months − discount`, floored at 0.
-
-## Known issues
-
-- **Edit form loses the due date:** `Edit.vue` sets `due_date: props.bill.due_date`, an ISO datetime such as `2026-12-03T00:00:00.000000Z`, which a date input cannot display. The field loads empty and, being required, blocks saving until a date is picked again. `toDateInput()` is already imported there and would fix it.
+- **Dates in forms:** the model serializes dates as ISO datetimes, which a date input cannot display, so `Edit.vue` passes them through `toDateInput()`.
+- **Due date rules:** it must be today or later when creating a bill. Editing allows past dates, so an overdue bill can still be saved.
