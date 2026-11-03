@@ -78,8 +78,9 @@
                                     id="issue_date"
                                     v-model="form.issue_date"
                                     type="date"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 text-gray-600"
-                                    readonly
+                                    class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.issue_date" class="mt-2" />
@@ -101,7 +102,8 @@
                             </div>
 
                             <p class="md:col-span-2 text-sm text-amber-700">
-                                Issue date is fixed after creation. Expiry updates from an approved, paid bill<span v-if="canEditRenewal">, or can be overridden by an approver</span>.
+                                <span v-if="canEditRenewal">Approvers can change both dates. Expiry updates from an approved, paid bill.</span>
+                                <span v-else>Issue date is fixed after creation. Expiry updates from an approved, paid bill.</span>
                             </p>
 
                             <!-- Price -->

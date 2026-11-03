@@ -51,7 +51,7 @@ class ServiceDateAuthorizationTest extends TestCase
         $this->assertSame('2026-03-01', $ssl->fresh()->expiry_date->toDateString());
     }
 
-    public function test_active_approver_can_change_renewal_but_not_original_start_dates(): void
+    public function test_active_approver_can_change_all_service_dates(): void
     {
         [$domain, $hosting, $ssl] = $this->createServices();
         $approver = User::factory()->create([
@@ -72,12 +72,38 @@ class ServiceDateAuthorizationTest extends TestCase
             'expiry_date' => '2031-03-01',
         ]));
 
-        $this->assertSame('2025-01-01', $domain->fresh()->registration_date->toDateString());
+        $this->assertSame('2030-01-01', $domain->fresh()->registration_date->toDateString());
         $this->assertSame('2031-01-01', $domain->fresh()->expiry_date->toDateString());
-        $this->assertSame('2025-02-01', $hosting->fresh()->start_date->toDateString());
+        $this->assertSame('2030-02-01', $hosting->fresh()->start_date->toDateString());
         $this->assertSame('2031-02-01', $hosting->fresh()->renewal_date->toDateString());
-        $this->assertSame('2025-03-01', $ssl->fresh()->issue_date->toDateString());
+        $this->assertSame('2030-03-01', $ssl->fresh()->issue_date->toDateString());
         $this->assertSame('2031-03-01', $ssl->fresh()->expiry_date->toDateString());
+    }
+
+    public function test_approver_service_end_date_must_follow_the_submitted_start_date(): void
+    {
+        [$domain, $hosting, $ssl] = $this->createServices();
+        $approver = User::factory()->create([
+            'user_type' => 'approver',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($approver)->put(route('domains.update', $domain), $this->domainPayload($domain, [
+            'registration_date' => '2030-01-01',
+            'expiry_date' => '2029-01-01',
+        ]))->assertSessionHasErrors('expiry_date');
+        $this->actingAs($approver)->put(route('hosting-services.update', $hosting), $this->hostingPayload($hosting, [
+            'start_date' => '2030-02-01',
+            'renewal_date' => '2029-02-01',
+        ]))->assertSessionHasErrors('renewal_date');
+        $this->actingAs($approver)->put(route('ssl-certificates.update', $ssl), $this->sslPayload($ssl, [
+            'issue_date' => '2030-03-01',
+            'expiry_date' => '2029-03-01',
+        ]))->assertSessionHasErrors('expiry_date');
+
+        $this->assertSame('2025-01-01', $domain->fresh()->registration_date->toDateString());
+        $this->assertSame('2025-02-01', $hosting->fresh()->start_date->toDateString());
+        $this->assertSame('2025-03-01', $ssl->fresh()->issue_date->toDateString());
     }
 
     public function test_account_manager_service_creation_forces_one_year_renewal_dates(): void

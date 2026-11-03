@@ -84,7 +84,7 @@
                         >
                             <h3 class="font-medium text-gray-900">Renewal Period</h3>
                             <p class="mt-1 text-sm text-gray-600">
-                                Enter the start date when selecting a service with no billing history. Existing bill dates are preserved. Renewal defaults to one year later.
+                                Enter the start date when selecting a service with no billing history. Existing bill dates are preserved. Renewal defaults to one year later.<span v-if="canEditRenewal"> Approvers can change both dates.</span>
                             </p>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
@@ -94,8 +94,8 @@
                                         v-model="form.service_started_date"
                                         type="date"
                                         class="mt-1 block w-full"
-                                        :readonly="!canEnterStart"
-                                        :class="{ 'bg-gray-100': !canEnterStart }"
+                                        :readonly="!canEditStart"
+                                        :class="{ 'bg-gray-100': !canEditStart }"
                                         :disabled="!form.service_id"
                                         required
                                     />
@@ -587,6 +587,7 @@ const submit = () => {
 
 const previousRenewal = computed(() => props.billingPeriods[`${form.client_id}:${form.service_type}:${form.service_id}`] || '')
 const canEnterStart = computed(() => !previousRenewal.value && !(form.service_type === props.bill.service_type && String(form.service_id) === String(props.bill.service_id) && props.bill.service_started_date))
+const canEditStart = computed(() => canEnterStart.value || props.canEditRenewal)
 watch(() => form.service_started_date, (value) => {
     if (canEnterStart.value) form.service_renewal_date = addOneYear(value)
 })

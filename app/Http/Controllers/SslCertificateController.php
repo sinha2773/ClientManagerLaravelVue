@@ -168,7 +168,8 @@ class SslCertificateController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['expiry_date'] = 'required|date|after:'.$sslCertificate->issue_date->toDateString();
+            $rules['issue_date'] = 'required|date';
+            $rules['expiry_date'] = 'required|date|after:issue_date';
         }
 
         $validated = $request->validate($rules);

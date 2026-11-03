@@ -87,8 +87,9 @@
                                     id="registration_date"
                                     v-model="form.registration_date"
                                     type="date"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 text-gray-600"
-                                    readonly
+                                    class="mt-1 block w-full"
+                                    :class="{ 'cursor-not-allowed bg-gray-100 text-gray-600': !canEditRenewal }"
+                                    :readonly="!canEditRenewal"
                                     required
                                 />
                                 <InputError :message="form.errors.registration_date" class="mt-2" />
@@ -110,7 +111,8 @@
                             </div>
 
                             <p class="md:col-span-2 text-sm text-amber-700">
-                                Registration date is fixed after creation. Expiry updates from an approved, paid bill<span v-if="canEditRenewal">, or can be overridden by an approver</span>.
+                                <span v-if="canEditRenewal">Approvers can change both dates. Expiry updates from an approved, paid bill.</span>
+                                <span v-else>Registration date is fixed after creation. Expiry updates from an approved, paid bill.</span>
                             </p>
 
                             <!-- Price -->
@@ -196,6 +198,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { ref } from 'vue';
+import { toDateInput } from '@/utils/servicePeriod.js';
 
 const props = defineProps({
     domain: Object,
@@ -209,8 +212,8 @@ const form = useForm({
     name: props.domain.name,
     provider_id: props.domain.provider_id,
     registrar: props.domain.registrar,
-    registration_date: props.domain.registration_date,
-    expiry_date: props.domain.expiry_date,
+    registration_date: toDateInput(props.domain.registration_date),
+    expiry_date: toDateInput(props.domain.expiry_date),
     auto_renew: props.domain.auto_renew,
     status: props.domain.status,
     price: props.domain.price,

@@ -150,7 +150,8 @@ class DomainController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['expiry_date'] = 'required|date|after:'.$domain->registration_date->toDateString();
+            $rules['registration_date'] = 'required|date';
+            $rules['expiry_date'] = 'required|date|after:registration_date';
         }
 
         $validated = $request->validate($rules);

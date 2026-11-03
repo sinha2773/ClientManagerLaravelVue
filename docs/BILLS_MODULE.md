@@ -59,12 +59,12 @@ Checked in the controller through `User::canManageBills()` and `User::canApprove
 | View, create | Yes | Yes |
 | Edit a draft | Yes | Yes |
 | Edit a non-draft bill | No | Yes, but `client_id`, `service_type` and `service_id` are locked |
-| Set a custom renewal date | No | Yes |
+| Change started and renewal dates | Only the started date on a service's first bill | Yes, on any bill, including non-draft bills |
 | Delete | No | Yes |
 
 ## Behaviour to preserve
 
-- **Renewal period:** the first bill for a service takes a manually entered start date, and later bills start at the previous bill's renewal date. Renewal defaults to one year later. See `normalizeServicePeriod()` and `billingPeriods()`.
+- **Renewal period:** the first bill for a service takes a manually entered start date, and later bills start at the previous bill's renewal date. Renewal defaults to one year later. An approver's submitted dates override all of this, and the renewal date must still be after the started date. See `normalizeServicePeriod()` and `billingPeriods()`.
 - **Renewing a service:** a bill renews its service only once it is both paid and approved, and only once (`Bill::renewService()`, `service_renewed_at`). Editing the renewal date of an already renewed bill updates the service through `syncRenewedService()`.
 - **EIMS amount:** the forms calculate `students × monthly fee × months − discount`, floored at 0.
 - **Dates in forms:** the model serializes dates as ISO datetimes, which a date input cannot display, so `Edit.vue` passes them through `toDateInput()`.

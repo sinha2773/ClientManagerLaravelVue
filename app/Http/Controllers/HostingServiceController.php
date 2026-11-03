@@ -171,7 +171,8 @@ class HostingServiceController extends Controller
         ];
 
         if ($request->user()->canApproveBills()) {
-            $rules['renewal_date'] = 'required|date|after:'.$hostingService->start_date->toDateString();
+            $rules['start_date'] = 'required|date';
+            $rules['renewal_date'] = 'required|date|after:start_date';
         }
 
         $validated = $request->validate($rules);

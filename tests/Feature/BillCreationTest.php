@@ -344,6 +344,58 @@ class BillCreationTest extends TestCase
         $this->assertSame('2027-09-15', $bill->service_renewal_date->toDateString());
     }
 
+    public function test_approver_can_change_bill_started_date_on_existing_and_later_bills(): void
+    {
+        $approver = User::factory()->create(['user_type' => 'approver', 'is_active' => true]);
+        $client = $this->createClient();
+        $domain = Domain::create([
+            'client_id' => $client->id,
+            'name' => 'approver-start.example.com',
+            'registrar' => 'Example Registrar',
+            'registration_date' => '2025-01-01',
+            'expiry_date' => '2026-01-01',
+            'auto_renew' => false,
+            'status' => 'active',
+            'price' => 2500,
+            'payment_status' => 'unpaid',
+        ]);
+        $bill = $this->createBill($approver, $client, [
+            'service_id' => $domain->id,
+            'service_started_date' => '2026-01-01',
+            'service_renewal_date' => '2027-01-01',
+        ]);
+        $payload = [
+            'client_id' => $client->id,
+            'service_type' => 'domain',
+            'service_id' => $domain->id,
+            'description' => 'Adjusted period',
+            'academic_year' => '2026',
+            'amount' => 2500,
+            'due_date' => now()->addMonth()->toDateString(),
+        ];
+
+        $this->actingAs($approver)->patch(route('bills.update', $bill), [
+            ...$payload,
+            'service_started_date' => '2026-02-01',
+            'service_renewal_date' => '2027-02-01',
+        ])->assertRedirect(route('bills.show', $bill));
+        $this->assertSame('2026-02-01', $bill->fresh()->service_started_date->toDateString());
+
+        $this->actingAs($approver)->post(route('bills.store'), [
+            ...$payload,
+            'service_started_date' => '2027-03-01',
+            'service_renewal_date' => '2028-03-01',
+        ])->assertRedirect();
+        $later = Bill::where('id', '!=', $bill->id)->sole();
+        $this->assertSame('2027-03-01', $later->service_started_date->toDateString());
+
+        $this->actingAs($approver)->patch(route('bills.update', $bill), [
+            ...$payload,
+            'service_started_date' => '2030-01-01',
+            'service_renewal_date' => '2029-01-01',
+        ])->assertSessionHasErrors('service_renewal_date');
+    }
+
     public function test_account_manager_cannot_override_an_existing_bill_renewal_date(): void
     {
         $manager = $this->createAccountManager();

@@ -552,7 +552,11 @@ class BillController extends Controller
             ->where('service_id', $service->id)
             ->when($excludeBillId, fn ($query) => $query->where('id', '!=', $excludeBillId))
             ->max('service_renewal_date');
-        $startedDate = $existingStart
+        $approverStart = $canEditRenewal && ! empty($validated['service_started_date'])
+            ? Carbon::parse($validated['service_started_date'])
+            : null;
+        $startedDate = $approverStart
+            ?? $existingStart
             ?? ($previousRenewal ? Carbon::parse($previousRenewal) : null)
             ?? (! empty($validated['service_started_date']) ? Carbon::parse($validated['service_started_date']) : null);
 

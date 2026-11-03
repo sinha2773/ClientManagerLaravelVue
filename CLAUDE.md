@@ -9,6 +9,7 @@ Before working on a module, read its doc instead of scanning the codebase. Open 
 | Module | Doc |
 | --- | --- |
 | Bills (`/bills`) | [docs/BILLS_MODULE.md](docs/BILLS_MODULE.md) |
+| Domains, hosting, SSL | [docs/SERVICES_MODULE.md](docs/SERVICES_MODULE.md) |
 
 Other guides: [CURRENCY_CONFIG.md](CURRENCY_CONFIG.md), [DATABASE_SWITCHING_GUIDE.md](DATABASE_SWITCHING_GUIDE.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md), [NGINX_DEPLOYMENT_GUIDE.md](NGINX_DEPLOYMENT_GUIDE.md).
 
