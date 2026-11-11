@@ -49,6 +49,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (! Auth::user()->is_active) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'This account is inactive. Contact an approver.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

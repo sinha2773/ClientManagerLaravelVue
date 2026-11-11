@@ -18,8 +18,10 @@ Date permission tests are in `tests/Feature/ServiceDateAuthorizationTest.php`.
 | --- | --- | --- |
 | Create | Enters the start date; the end date is forced to one year later | Enters both |
 | Edit | Cannot change either date | Can change both; the end date must be after the start date |
+| Delete | No | Yes. Deleting a domain also deletes its hosting and SSL. |
 
 - The server enforces this in each controller's `update()`: date rules are only added for approvers (`canApproveBills()`), so dates sent by anyone else are dropped.
+- Each controller's `destroy()` returns 403 for non-approvers, and the Delete buttons are hidden using the shared `auth.canApprove` prop.
 - The forms use the `canEditRenewal` prop to make the date inputs read-only for account managers.
 
 ## Behaviour to preserve

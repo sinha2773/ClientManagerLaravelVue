@@ -15,6 +15,13 @@ Other guides: [CURRENCY_CONFIG.md](CURRENCY_CONFIG.md), [DATABASE_SWITCHING_GUID
 
 When you change a module, update its doc in the same change. When you learn a module well enough to save the next person a search, add a doc and list it here.
 
+## Roles and access
+
+- **Roles:** `users.user_type` is `account_manager` or `approver`. `User::canApproveBills()` means an active approver.
+- **Inactive users:** users with `is_active = false` cannot log in. The `active` middleware on the main route group also signs them out mid-session.
+- **Approver-only:** deleting clients, domains, hosting, SSL and bills. Pages hide these buttons using the shared Inertia prop `auth.canApprove`, and controllers return 403.
+- **Open to every user:** Employees, Payroll and Settings have no role checks. This was a deliberate decision.
+
 ## Commands
 
 ```bash

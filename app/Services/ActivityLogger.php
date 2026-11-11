@@ -95,17 +95,7 @@ class ActivityLogger
     {
         $changes = $model->getChanges();
 
-        if (array_key_exists('approved_by', $changes) || array_key_exists('approved_at', $changes)) {
-            return true;
-        }
-
-        foreach (['payment_approved_level1', 'payment_approved_level2'] as $field) {
-            if (($changes[$field] ?? false) === true || ($changes[$field] ?? null) === 1) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_key_exists('approved_by', $changes) || array_key_exists('approved_at', $changes);
     }
 
     private function subjectLabel(Model $subject): string

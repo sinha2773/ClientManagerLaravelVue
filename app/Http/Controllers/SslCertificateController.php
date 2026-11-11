@@ -187,8 +187,12 @@ class SslCertificateController extends Controller
             ->with('message', 'SSL certificate updated successfully.');
     }
 
-    public function destroy(SslCertificate $sslCertificate)
+    public function destroy(Request $request, SslCertificate $sslCertificate)
     {
+        if (! $request->user()->canApproveBills()) {
+            abort(403, 'Only approvers can delete a SSL certificate.');
+        }
+
         $sslCertificate->delete();
 
         return redirect()->route('ssl-certificates.index')

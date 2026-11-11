@@ -190,8 +190,12 @@ class HostingServiceController extends Controller
             ->with('message', 'Hosting service updated successfully.');
     }
 
-    public function destroy(HostingService $hostingService)
+    public function destroy(Request $request, HostingService $hostingService)
     {
+        if (! $request->user()->canApproveBills()) {
+            abort(403, 'Only approvers can delete a hosting service.');
+        }
+
         $hostingService->delete();
 
         return redirect()->route('hosting-services.index')

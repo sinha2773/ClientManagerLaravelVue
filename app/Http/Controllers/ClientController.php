@@ -173,8 +173,12 @@ class ClientController extends Controller
             ->with('message', 'Client updated successfully.');
     }
 
-    public function destroy(Client $client)
+    public function destroy(Request $request, Client $client)
     {
+        if (! $request->user()->canApproveBills()) {
+            abort(403, 'Only approvers can delete a client.');
+        }
+
         $client->delete();
 
         return redirect()->route('clients.index')

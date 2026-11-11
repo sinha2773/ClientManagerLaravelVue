@@ -15,6 +15,7 @@
                         Edit Domain
                     </Link>
                     <button
+                        v-if="$page.props.auth.canApprove"
                         @click="deleteDomain"
                         class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
@@ -108,57 +109,6 @@
                     </div>
                 </div>
 
-                <!-- Payment Approval Status -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Approval Status</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Level 1 Approval</p>
-                                    <p class="mt-1">
-                                        <span :class="{
-                                            'px-2 py-1 text-sm rounded-full': true,
-                                            'bg-green-100 text-green-800': domain.payment_approved_level1,
-                                            'bg-red-100 text-red-800': !domain.payment_approved_level1
-                                        }">
-                                            {{ domain.payment_approved_level1 ? 'Approved' : 'Pending' }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <button
-                                    v-if="!domain.payment_approved_level1"
-                                    @click="approvePaymentLevel1"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                >
-                                    Approve Level 1
-                                </button>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Level 2 Approval</p>
-                                    <p class="mt-1">
-                                        <span :class="{
-                                            'px-2 py-1 text-sm rounded-full': true,
-                                            'bg-green-100 text-green-800': domain.payment_approved_level2,
-                                            'bg-red-100 text-red-800': !domain.payment_approved_level2
-                                        }">
-                                            {{ domain.payment_approved_level2 ? 'Approved' : 'Pending' }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <button
-                                    v-if="!domain.payment_approved_level2 && domain.payment_approved_level1"
-                                    @click="approvePaymentLevel2"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                >
-                                    Approve Level 2
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Notes -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -206,13 +156,5 @@ function deleteDomain() {
     if (confirm('Are you sure you want to delete this domain?')) {
         router.delete(route('domains.destroy', props.domain.id));
     }
-}
-
-function approvePaymentLevel1() {
-    router.patch(route('domains.approve.level1', props.domain.id));
-}
-
-function approvePaymentLevel2() {
-    router.patch(route('domains.approve.level2', props.domain.id));
 }
 </script> 

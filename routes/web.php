@@ -35,7 +35,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
@@ -44,24 +44,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Domain routes
     Route::resource('domains', DomainController::class);
-    Route::patch('/domains/{domain}/approve-level1', [DomainController::class, 'approvePaymentLevel1'])
-        ->name('domains.approve-level1');
-    Route::patch('/domains/{domain}/approve-level2', [DomainController::class, 'approvePaymentLevel2'])
-        ->name('domains.approve-level2');
 
     // SSL Certificate routes
     Route::resource('ssl-certificates', SslCertificateController::class);
-    Route::patch('/ssl-certificates/{sslCertificate}/approve-level1', [SslCertificateController::class, 'approvePaymentLevel1'])
-        ->name('ssl-certificates.approve-level1');
-    Route::patch('/ssl-certificates/{sslCertificate}/approve-level2', [SslCertificateController::class, 'approvePaymentLevel2'])
-        ->name('ssl-certificates.approve-level2');
 
     // Hosting Service routes
     Route::resource('hosting-services', HostingServiceController::class);
-    Route::patch('/hosting-services/{hostingService}/approve-level1', [HostingServiceController::class, 'approvePaymentLevel1'])
-        ->name('hosting-services.approve-level1');
-    Route::patch('/hosting-services/{hostingService}/approve-level2', [HostingServiceController::class, 'approvePaymentLevel2'])
-        ->name('hosting-services.approve-level2');
 
     // Bill routes
     Route::resource('bills', BillController::class);

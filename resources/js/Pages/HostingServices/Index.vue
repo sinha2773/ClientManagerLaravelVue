@@ -182,6 +182,7 @@
                                                     Edit
                                                 </Link>
                                                 <button
+                                                    v-if="$page.props.auth.canApprove"
                                                     @click="deleteHostingService(service.id)"
                                                     class="text-red-600 hover:text-red-900"
                                                 >

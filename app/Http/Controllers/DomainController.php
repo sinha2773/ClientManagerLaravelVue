@@ -162,29 +162,15 @@ class DomainController extends Controller
             ->with('message', 'Domain updated successfully.');
     }
 
-    public function destroy(Domain $domain)
+    public function destroy(Request $request, Domain $domain)
     {
+        if (! $request->user()->canApproveBills()) {
+            abort(403, 'Only approvers can delete a domain.');
+        }
+
         $domain->delete();
 
         return redirect()->route('domains.index')
             ->with('message', 'Domain deleted successfully.');
-    }
-
-    public function approvePaymentLevel1(Domain $domain)
-    {
-        $domain->update(['payment_approved_level1' => true]);
-
-        return back()->with('success', 'Payment approved at Level 1.');
-    }
-
-    public function approvePaymentLevel2(Domain $domain)
-    {
-        if (! $domain->payment_approved_level1) {
-            return back()->with('error', 'Level 1 approval is required first.');
-        }
-
-        $domain->update(['payment_approved_level2' => true]);
-
-        return back()->with('success', 'Payment fully approved.');
     }
 }
