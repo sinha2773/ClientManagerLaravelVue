@@ -6,9 +6,6 @@ defineProps({
     canLogin: {
         type: Boolean,
     },
-    canRegister: {
-        type: Boolean,
-    },
 });
 </script>
 
@@ -32,21 +29,13 @@ defineProps({
                         Dashboard
                     </Link>
 
-                    <template v-else>
-                        <Link
-                            :href="route('login')"
-                            class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:text-indigo-600"
-                        >
-                            Log in
-                        </Link>
-                        <Link
-                            v-if="canRegister"
-                            :href="route('register')"
-                            class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Get Started
-                        </Link>
-                    </template>
+                    <Link
+                        v-else
+                        :href="route('login')"
+                        class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:text-indigo-600"
+                    >
+                        Log in
+                    </Link>
                 </div>
             </div>
         </nav>

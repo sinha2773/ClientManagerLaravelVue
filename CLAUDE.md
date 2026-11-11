@@ -41,6 +41,10 @@ npm run build
 - `resources/js/Components/`: shared inputs (`TextInput`, `Checkbox`, `InputLabel`, `InputError`)
 - `resources/js/utils/`: `currency.js`, `servicePeriod.js`
 
-## Known failing tests
+## Users
 
-`Tests\Feature\Auth\RegistrationTest` has 2 failing tests because `/register` returns 404. Everything else should pass.
+There is no public registration. Account managers and approvers create users from User Management (`/user-management`). Do not add a `/register` route.
+
+## Tests
+
+All tests should pass.
